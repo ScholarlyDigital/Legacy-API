@@ -27,3 +27,38 @@ async function ajaxGetRequest(url, waitTime) {
     api.send();
   });
 }
+
+async function* fetchCoachStream(messageData) {
+  const serverUrl = "https://api.scholarly.repl.co/coach-stream"
+
+  const response = await fetch(serverUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ messages: messageData }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    const content = decoder.decode(value, { stream: true });
+    yield content;
+  }
+}
+
+export async function coachStream(messageData, onContentReceived) {
+  for await (const content of fetchCoachStream(messageData)) {
+    onContentReceived(content);
+  }
+}
