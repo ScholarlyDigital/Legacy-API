@@ -72,3 +72,13 @@ export async function coachStream(messageData, onContentReceived, onStreamFinish
     }
   }
 }
+
+export function createMessagesJSON(userMessages, coachMessages) {
+  var messageData = []
+  for (let i = 0; i < coachMessages.length; i++) {
+    messageData.push({"role":"user","content":userMessages[i]});
+    messageData.push({"role":"assistant","content":coachMessages[i]});
+  }
+  messageData.push({"role":"user","content":userMessages[userMessages.length - 1]});
+  return messageData
+}
