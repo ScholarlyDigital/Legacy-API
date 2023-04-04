@@ -220,11 +220,9 @@
                             <button class="btn btn-sm copy-button" type="button" onclick="copyCode(this, 'cdn-code-block')">
                                 <i class="fa fa-clipboard" aria-hidden="true"></i> Copy
                             </button>
-                            <pre class="m-0"><code class="html hljs" id="cdn-code-block"><span class="hljs-keyword">from</span> <span class="hljs-built_in">scholarly_api_latest</span> <span class="hljs-keyword">import</span> <span class="hljs-section">ScholarlyAPI</span>
+                            <pre class="m-0"><code class="html hljs" id="cdn-code-block"><span class="hljs-keyword">import</span> <span class="hljs-built_in">scholarly_api_latest</span> <span class="hljs-keyword">as</span> <span class="hljs-section">sAPI</span>
 
-<span class="hljs-variable">api</span> = <span class="hljs-section">ScholarlyAPI()</span>
-
-<span class="hljs-variable">openai_key</span> = <span class="hljs-variable">api</span>.<span class="hljs-function">getKey()</span>
+<span class="hljs-variable">openai_key</span> = <span class="hljs-variable">sAPI</span>.<span class="hljs-function">getKey()</span>
 <span class="hljs-keyword">if</span> <span class="hljs-variable">openai_key</span> == <span class="hljs-literal">None</span>:
   <span class="hljs-comment">#Handle no key found logic here</span></code></pre>
                         </div>
