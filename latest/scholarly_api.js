@@ -1,19 +1,19 @@
 export async function getKey() {
   try {
-    const key = await requestKey();
+    const key = await ajaxGetRequest('https://api.scholarly.repl.co',12000);
+    console.log("OpenAI key found.");
     return key;
   } catch (error) {
     return undefined;
   }
 }
 
-async function requestKey() {
+async function ajaxGetRequest(url, waitTime) {
   return new Promise((resolve, reject) => {
     let api = new XMLHttpRequest();
-    api.timeout = 12000;
+    api.timeout = waitTime;
 
     api.onload = () => {
-      console.log("OpenAI key found.");
       resolve(JSON.parse(api.responseText).key);
     };
       
@@ -22,7 +22,7 @@ async function requestKey() {
       reject(new Error("Timed out"));
     };
 
-    api.open('GET','https://api.scholarly.repl.co/openai');
+    api.open('GET',url);
     api.send();
   });
 }
