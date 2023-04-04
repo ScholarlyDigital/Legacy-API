@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Meta tags -->
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
+    <meta name="viewport" content="width=device-width" />
+
+    <!-- Chrome, Firefox OS and Opera mobile address bar theming -->
+    <meta name="theme-color" content="#000000">
+    <!-- Windows Phone mobile address bar theming -->
+    <meta name="msapplication-navbutton-color" content="#000000">
+    <!-- iOS Safari mobile address bar theming -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="#000000">
+
+    <!-- SEO -->
+    <meta name="description" content="Documentation for Scholarly API. Private and in development.">
+    <meta name="author" content="Scholarly Team">
+
+    <!-- Fav and Title -->
+    <link rel="icon" href="/static/icon.png">
+    <title>Docs - Scholarly API</title>
+    
+
+    <!-- Halfmoon CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/halfmoon@1.1.1/css/halfmoon.min.css" rel="stylesheet" />
+  <link href="/static/style.css" rel="stylesheet" />
+    <!-- Font awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+    <!-- Roboto font (Used when Apple system fonts are not available) -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-171454520-1"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'UA-171454520-1');
+        </script>
+    
+</head>
+
+<body class="dark-mode with-custom-webkit-scrollbars with-custom-css-scrollbars" data-sidebar-shortcut-enabled="true" data-dm-shortcut-enabled="true">
+    
+    <!-- Documentation section id (hidden) -->
+    <input type="hidden" name="docs-section-id" id="docs-section-id" value="download">
+
+    <!-- Modals start -->
+    
+    <!-- Modals end -->
+
+    <!-- Page wrapper start -->
+    <div id="page-wrapper" class="page-wrapper with-navbar">
+
+        <!-- Navbar start -->
+        <nav class="navbar">
+            <div class="navbar-content">
+            </div>
+            <a href="" class="navbar-brand ml-10 ml-sm-15">
+                <img src="/static/icon.png" alt="logo">
+                <span class="badge font-size-12 text-monospace px-5 px-sm-10">
+                    v0.0.1
+                </span>
+            </a>
+            <ul class="navbar-nav hidden-sm-and-down">
+                <li class="nav-item active">
+                    <a href="" class="nav-link">Documentation</a>
+                </li>
+            </ul>
+            <div class="navbar-content ml-auto">
+
+                <button class="btn btn-action mr-5" type="button" onclick="halfmoon.toggleDarkMode()" aria-label="Toggle dark mode">
+                    <i class="fa fa-moon-o" aria-hidden="true"></i>
+                </button>
+                <a href="mailto:dev.scholarly.team@gmail.com" class="btn btn-primary hidden-sm-and-down" role="button" target="_blank">
+                    <i class="fa fa-envelope mr-5" aria-hidden="true"></i>
+                    Contact
+                </a>
+                <div class="dropdown with-arrow hidden-md-and-up">
+                    <button class="btn navbar-menu-btn" data-toggle="dropdown" type="button" id="navbar-dropdown-toggle-btn" aria-haspopup="true" aria-expanded="false">
+                        <span class="text">Menu</span>
+                        <i class="fa fa-angle-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbar-dropdown-toggle-btn">
+                        <a href="" class="dropdown-item">Documentation</a>
+
+                        <div class="dropdown-content">
+                            <a href="mailto:dev.scholarly.team@gmail.com" class="btn btn-primary btn-download-sm" role="button" target="_blank">
+                                <i class="fa fa-envelope" aria-hidden="true"></i>
+                                <span class="ml-5">Contact</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <!-- Navbar end -->
+
+        <!-- Content wrapper start -->
+        <div class="content-wrapper">
+            
+
+            
+    <div class="container-fluid">
+        <div class="row">
+
+            <div class="col-xl-9">
+
+                <!-- Top section start  -->
+                <div id="top">
+                    <div class="content">
+                        <h1 class="content-title font-size-30">
+                            Documentation
+                        </h1>
+                        <div class="my-20">
+                            
+
+
+                        </div>
+                        <p>
+                            An overview of the Scholarly API. The page describes how to initialise the Scholarly API on JavaScript and Python. The API aims to making Scholarly products easy and accesible to those with a license. 
+                        </p>
+                    </div>
+                </div>
+                <!-- Top section end  -->
+                  <div id="functions">
+                    <div class="content">
+                        <h2 class="content-title">
+                            Functions
+                            <a href="#functions" class="ml-5 text-decoration-none">#</a>
+                        </h2>
+                        <p>
+                            Here is an overview of all the functions provided by Schoarly. <strong>All JavaScript versions of the functions are asynchronous</strong> requiring an <span class="code">await</span> statement. These are not finished, so pay attention to the following:
+                        </p>
+                        <ul>
+                            <li>
+                                <span class="code">coach(prompt)</span> &mdash; Make a chat request with Scholarly's custom language model, Coach. Prompt is an argument for the question. [INCOMPLETE]
+                            </li>
+                            <li>
+                                <span class="code">markImage(img)</span> &mdash; Mark and provide feedback to handwritten work via images. Takes in an image file of PNG/JPG. [INCOMPLETE]
+                            </li>
+                            <li>
+                                <span class="code">markFile(pdf)</span> &mdash; Mark and provide feedback to digital work via pdf. Takes in a PDF file argument. [INCOMPLETE]
+                            </li>
+                            <li>
+                                <span class="code">getKey()</span> &mdash; Recieve OpenAI keys for custom services not yet provided via API. No arguments. [AVAILABLE]
+                            </li>
+                        </ul>
+                </div>
+                <!-- Compiled CSS and JavaScript section end -->
+
+                <!-- Compiled CSS and JavaScript section start  -->
+                <div id="js-module">
+                    <div class="content">
+                        <h2 class="content-title">
+                            Javascript Module
+                            <a href="#js-module" class="ml-5 text-decoration-none">#</a>
+                        </h2>
+                        <div class="my-20">
+                          <p>
+                            This module is both available as a local file and via CDN.
+                        </p>
+                            <a href="/download-js" class="btn btn-primary px-10" role="button" target="_blank">Download JS Module</a>
+                        </div>
+                        <p>
+                            Firstly, check your JS file is linked to as <span class="code">type = "module"</span> if you are operating through HTML.
+                        </p>
+                    </div>
+                    <div class="card p-0">
+                        <div class="code-header rounded-top border-top-0">
+                            JavaScript example using CDN
+                        </div>
+                        <div class="code-container">
+                            <button class="btn btn-sm copy-button" type="button" onclick="copyCode(this, 'code-block-1')">
+                                <i class="fa fa-clipboard" aria-hidden="true"></i> Copy
+                            </button>
+                            <pre class="m-0"><code class="html hljs xml" id="code-block-1"><span class="javascript"><span class="hljs-keyword">import</span> { <span class="hljs-function">getKey</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">"https://api.scholarly.repl.co/cdn-js"</span>;
+                              
+<span class="hljs-keyword">var</span><span class="hljs-variable"> openai_key</span> = <span class="hljs-literal">await </span><span class="hljs-function">getKey()</span>;
+<span class="hljs-keyword">if</span> (<span class="hljs-variable">openai_key</span> == <span class="hljs-literal">undefined</span>) {
+  <span class="hljs-comment">//Handle no key found logic here</span>
+}</span></code></pre>
+                        </div>
+                    </div>
+                    <div class="content">
+                        <p>
+                            <strong>Pleast note</strong>, the JS file has other functions than  <span class="code"><span class="hljs-function">getKey</span></span>. In this example, it is used to showcase how to import the file and what to expect. For example, adding the <span class="code"><span class="hljs-function">coach()</span></span> function to recieve messages from the custom language model is also available. It is up to <strong>you</strong> what modules you add to <span class="code"><span class="hljs-keyword">import</span></span>.
+                        </p>
+                    </div>
+                </div>
+                <!-- Compiled CSS and JavaScript section end -->
+
+                <!-- CDN section start  -->
+                <div id="python-module">
+                    <div class="content">
+                        <h2 class="content-title">
+                            Python Module
+                            <a href="#python-module" class="ml-5 text-decoration-none">#</a>
+                        </h2>
+                        <p>
+                            This module is only available via local file.
+                        </p>
+                      <div class="my-20">
+                            <a href="/download-py" class="btn btn-primary px-10" role="button" target="_blank">Download Python Module</a>
+                      </div>
+                      <p>
+                            Make sure the <span class="code">requests</span> module is installed.
+                      </p>
+                    </div>
+                    <div class="card p-0">
+                        <div class="code-header rounded-top border-top-0">
+                            Python example using local file
+                        </div>
+                        <div class="code-container">
+                            <button class="btn btn-sm copy-button" type="button" onclick="copyCode(this, 'cdn-code-block')">
+                                <i class="fa fa-clipboard" aria-hidden="true"></i> Copy
+                            </button>
+                            <pre class="m-0"><code class="html hljs" id="cdn-code-block"><span class="hljs-keyword">from</span> <span class="hljs-built_in">scholarly_api_latest</span> <span class="hljs-keyword">import</span> <span class="hljs-section">ScholarlyAPI</span>
+
+<span class="hljs-variable">api</span> = <span class="hljs-section">ScholarlyAPI()</span>
+
+<span class="hljs-variable">openai_key</span> = <span class="hljs-variable">api</span>.<span class="hljs-function">getKey()</span>
+<span class="hljs-keyword">if</span> <span class="hljs-variable">openai_key</span> == <span class="hljs-literal">None</span>:
+  <span class="hljs-comment">#Handle no key found logic here</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+                <!-- CDN section end -->
+
+                <!-- Where to next section start  -->
+                <div id="where-to-next">
+                    <div class="content">
+                        <h2 class="content-title">
+                            Where To Next
+                            <a href="#where-to-next" class="ml-5 text-decoration-none">#</a>
+                        </h2>
+                        <p>
+                            Once you have downloaded and setup the modules of choice, the possibilites are endless. As more functions appear, devs will be able to build a Scholarly app on any platform, as all backend databases, algorithms, etc. will be accesible via API. This allows cross-platform with the luxury of no major back-end hastles.
+                        </p>
+                        <p>All code is available for devs to see, and for now, no in-depth documentation on the functions needs to be released. As well as this, many functions aren't ready yet, and their status will be updated.</p>
+                    </div>
+                </div>
+                <!-- Where to next section end -->
+
+                <!-- Up next section start -->
+                <div class="content mb-0">
+                    <hr class="mb-20" />
+                    
+                </div>
+                <!-- Up next section end -->
+
+            </div>
+
+            <!-- On this page navigation start  -->
+            <div class="col-xl-3 on-this-page-nav-container">
+                <div class="content">
+                    <div class="on-this-page-nav" id="on-this-page-nav">
+                        <div class="title">On this page</div>
+                        <a href="#functions">Functions</a>
+                        <a href="#js-module">JavaScript Module</a>
+                        <a href="#python-module">Python Module</a>
+                        <a href="#where-to-next">Where To Next</a>
+                    </div>
+                </div>
+            </div>
+            <!-- On this page navigation end  -->
+
+        </div>
+    </div>
+        </div>
+        <!-- Content wrapper end -->
+
+    </div>
+    <!-- Page wrapper end -->
+    
+
+    <!-- List JS -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+    <!-- Highlight JS -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js"></script>
+    <!-- Halfmoon JS -->
+    <script src="https://cdn.jsdelivr.net/npm/halfmoon@1.1.1/js/halfmoon.min.js"></script>
+    <!-- Script -->
+    <script type="text/javascript">
+        // Function for scrolling to an element, and placing it in the middle of the view
+        // By default, the container parameter is set to the browser window
+        function scrollIntoViewMiddle(element, container) {
+            if (container === undefined) {
+                container = window;
+            }
+            var elementRect = element.getBoundingClientRect();
+            var absoluteElementTop = elementRect.top;
+            var middleDiff = (elementRect.height / 2);
+            var scrollTopOfElement = absoluteElementTop + middleDiff;
+            var scrollY = (scrollTopOfElement - (container.getBoundingClientRect().height / 2));
+            container.scrollLeft = 0;
+            container.scrollTop = scrollY;
+        }
+
+        // Copies code to the clipboard
+        function copyCode(elem, containerId) {
+            // Copy code to clipboard
+            var range = document.createRange();
+            range.selectNode(document.getElementById(containerId));
+            window.getSelection().removeAllRanges(); // clear current selection
+            window.getSelection().addRange(range); // to select text
+            document.execCommand("copy");
+            window.getSelection().removeAllRanges();// to deselect
+
+            // Show confirmation
+            elem.innerHTML = "<i class='fa fa-check-circle' aria-hidden='true'></i> Copied!";
+
+            // Hide confirmation
+            setTimeout(function() {
+                elem.innerHTML = "<i class='fa fa-clipboard' aria-hidden='true'></i> Copy";
+            }, 2000);
+        }
+
+        /* Things to do once the DOM is loaded */
+        document.addEventListener("DOMContentLoaded", function() {
+            // Getting the required elements
+            var pageWrapper = document.getElementById("page-wrapper");
+            var docsSectionId = document.getElementById("docs-section-id").value;
+            var filterDocsElem = document.getElementById("filter-docs");
+            var activeDocsSectionSidebarMenuItem = document.getElementById("sidebar-" + docsSectionId);
+
+            // Adding the active class to the sidebar menu item
+            activeDocsSectionSidebarMenuItem.classList.add("active");
+
+            // Adding filtering to the docs section ids in the sidebar
+            var docsSectionIDsList = new List("sidebar", {
+                valueNames: ["name", "alt-name"]
+            });
+
+            // Handle keydown events (overridden)
+            halfmoon.keydownHandler = function(event) {
+                // Shortcuts are triggered only if no input, textarea, or select has focus,
+                // And if the control key or command key is not pressed down
+                if (!(document.querySelector("input:focus") || document.querySelector("textarea:focus") || document.querySelector("select:focus"))) {
+                    event = event || window.event;
+                    if (!(event.ctrlKey || event.metaKey)) {
+                        // Focus on the filter docs element when [shift] + [F] keys are  pressed, but only if sidebar is not hidden (since the filter box is in the sidebar)
+                        if (event.shiftKey && event.which == 70) {
+                            if (!(pageWrapper.getAttribute("data-sidebar-hidden"))) {
+                                filterDocsElem.focus();
+                                event.preventDefault();
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Init highlight Js and format HTML code
+            hljs.initHighlightingOnLoad();
+            var codeBlocks = document.querySelectorAll("code.hljs");
+            for (var i = 0; i < codeBlocks.length; i++) {
+                codeBlocks[i].innerHTML = codeBlocks[i].innerHTML.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            }
+
+            // Scroll to the active sidebar menu item
+            // Only if the sidebar menu item does not have the disabling attribute
+            if (activeDocsSectionSidebarMenuItem) {
+                if (!activeDocsSectionSidebarMenuItem.getAttribute("data-active-scroll-disabled")) {
+                    scrollIntoViewMiddle(activeDocsSectionSidebarMenuItem, document.getElementsByClassName("sidebar")[0]);
+                }
+            }
+
+            // Scroll to hash if it exists
+            if (window.location.hash) {
+                var targetElem = document.getElementById(window.location.hash.substring(1));
+                if (targetElem) {
+                    targetElem.scrollIntoView(true);
+                }
+            }
+
+            // Display the Github star button containers after 2 seconds
+            // This is usually enough to load the script
+            setTimeout(function() {
+                document.getElementById("gh-star-btn-container-1").classList.add("d-lg-inline-block");
+                document.getElementById("gh-star-btn-container-2").classList.remove("d-none");
+            }, 2000);
+        });
+    </script>
+    <!-- Github star button -->
+    <script async defer src="https://buttons.github.io/buttons.js"></script>
+
+    
+</body>
+
+</html>
