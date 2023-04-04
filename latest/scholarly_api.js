@@ -1,6 +1,6 @@
 export async function getKey() {
   try {
-    const rawKey = await ajaxGetRequest('https://api.scholarly.repl.co',12000);
+    const rawKey = await ajaxGetRequest('https://api.scholarly.repl.co/openai',12000);
     const key = rawKey.key
     console.log("OpenAI key found.");
     return key;
