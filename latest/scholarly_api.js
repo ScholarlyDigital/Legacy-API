@@ -1,6 +1,7 @@
 export async function getKey() {
   try {
-    const key = await ajaxGetRequest('https://api.scholarly.repl.co',12000);
+    const rawKey = await ajaxGetRequest('https://api.scholarly.repl.co',12000);
+    const key = rawKey.key
     console.log("OpenAI key found.");
     return key;
   } catch (error) {
@@ -14,7 +15,7 @@ async function ajaxGetRequest(url, waitTime) {
     api.timeout = waitTime;
 
     api.onload = () => {
-      resolve(JSON.parse(api.responseText).key);
+      resolve(JSON.parse(api.responseText));
     };
       
     api.ontimeout = (e) => {
