@@ -34,7 +34,7 @@ async function* fetchCoachStream(messageData) {
   const response = await fetch(serverUrl, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({ messages: messageData }),
   });
@@ -57,8 +57,18 @@ async function* fetchCoachStream(messageData) {
   }
 }
 
-export async function coachStream(messageData, onContentReceived) {
-  for await (const content of fetchCoachStream(messageData)) {
-    onContentReceived(content);
+export async function coachStream(messageData, onContentReceived, onStreamFinished, onError) {
+  try {
+    for await (const content of fetchCoachStream(messageData)) {
+      onContentReceived(content);
+    }
+  } 
+  catch (err) {
+    onError(err);
+  }
+  finally {
+    if (onStreamFinished) {
+      onStreamFinished();
+    }
   }
 }
