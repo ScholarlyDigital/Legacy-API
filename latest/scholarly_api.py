@@ -4,15 +4,20 @@ def getKey(self):
   r = requests.get('https://api.scholarly.repl.co/openai')
   try:
     return r.json()['key']
-  except requests.exceptions.JSONDecodeError:
-    print("Error in decoding JSON. Error code:")
-    return None
+  except requests.exceptions.JSONDecodeError as e:
+    raise e
 
-def coachStream(data):
-    s = requests.Session()
-    with s.post('https://api.scholarly.repl.co/coach-stream', headers=None, stream=True,json={"messages":data}) as resp:
-      for char in resp.iter_content(1,decode_unicode=True):
-        if char: yield char
+def coachStream(data, chunkSize):
+    try:
+        s = requests.Session()
+        with s.post('https://api.scholarly.repl.co/coach-stream', headers=None, stream=True, json={"messages": data}) as resp:
+            resp.raise_for_status()
+            for chunk in resp.iter_content(chunkSize, decode_unicode=True):
+                if chunk: yield chunk
+    except RequestException as e:
+        raise e
+    except Exception as e:
+        raise e
 
 def createMessagesJSON(userMessages: list ,coachMessages: list):
   sortedArray = []
