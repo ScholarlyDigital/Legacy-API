@@ -28,7 +28,7 @@ async function ajaxGetRequest(url, waitTime) {
   });
 }
 
-async function* fetchCoachStream(messageData) {
+async function* fetchCoachStream(messageData, signal) {
   const serverUrl = "https://api.scholarly.repl.co/coach-stream"
 
   const response = await fetch(serverUrl, {
@@ -37,6 +37,7 @@ async function* fetchCoachStream(messageData) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({ messages: messageData }),
+    signal: signal
   });
 
   if (!response.ok) {
@@ -54,24 +55,42 @@ async function* fetchCoachStream(messageData) {
 
     const content = decoder.decode(value, { stream: true });
     yield content;
+
+    if (signal.aborted) {
+      reader.cancel();
+      break;
+    }
   }
 }
 
-export async function coachStream(messageData, onContentReceived, onStreamFinished, onError) {
-  try {
-    for await (const content of fetchCoachStream(messageData)) {
-      onContentReceived(content);
-    }
-  } 
-  catch (err) {
-    onError(err);
-  }
-  finally {
+
+export async function coachStream(messageData, onContentReceived, onStreamFinished, onError, signal) {
+  const abortController = new AbortController();
+  const onStopped = (manual) => {
     if (onStreamFinished) {
-      onStreamFinished();
+      onStreamFinished(manual);
+    }
+  };
+
+  try {
+    for await (const content of fetchCoachStream(messageData, signal ? signal : abortController.signal)) {
+      onContentReceived(content);
+      if (signal && signal.aborted) {
+        abortController.abort();
+      }
+    }
+    onStopped(false);
+  }
+  catch (err) {
+    if (err.name === 'AbortError') {
+      onStopped(true);
+    } else {
+      onError(err);
     }
   }
-}
+
+};
+
 
 export function createMessagesJSON(userMessages, coachMessages) {
   var messageData = []
