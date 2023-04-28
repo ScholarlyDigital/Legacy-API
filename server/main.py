@@ -2,17 +2,92 @@ from flask import Flask, jsonify, render_template, send_from_directory, Response
 from flask_cors import CORS
 import os
 import openai
+import secrets
+import uuid
+import json
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 openai.key = os.environ.get('OPENAI_API_KEY')
-systemMessage = "You are a tutor who is an expert in all subjects. Your name is Coach. You are on the Scholarly website and are longer affiliated with OpenAI. Refer to yourself as a tutor and not a language model. The user will ask questions that will be within the GCSE curriculum and outside. If the questions are outside the curriculum, answer them nonthless. If the questions are within the curriculum, answer the questions with clear cut answers, and you may choose to follow up with reasonings and further detail. You may answer homework questions and solve problems for the user. If the questions are mathematical, add a disclaimer at then stating that your arithmetic could be incorrect, and the user should double check at all times."
+systemMessage = os.environ.get('SYSTEM_MESSAGE')
 
-@app.route('/openai',methods=['GET'])
+tokensInUse = []
+
+class SessionToken:
+    def __init__(self, base_dir="sessions"):
+        self.base_dir = base_dir
+        self.tokens = self.load_tokens()
+
+        if not os.path.exists(self.base_dir):
+            os.makedirs(self.base_dir)
+
+    def load_tokens(self):
+        if os.path.exists(self.base_dir):
+            return os.listdir(self.base_dir)
+        else:
+            return []
+
+    def get_all(self):  
+      self.tokens = self.load_tokens()
+      return self.tokens
+
+    def load_data(self, token):
+      if not self.check_token(token):
+        return None
+
+      jsonDir = "sessions/"+token+"/context.json"
+      with open(jsonDir, "r") as j:
+        return json.load(j)
+
+    def check_token(self, token):
+      return token in self.get_all()
+
+    def generate_token(self):
+        global systemMessage
+        self.tokens = self.load_tokens()
+        while True:
+            token = str(uuid.UUID(int=secrets.randbits(128), version=4))
+            if token not in self.tokens:
+                self.tokens.append(token)
+                session_dir = os.path.join(self.base_dir, token)
+                os.makedirs(session_dir)
+                jsonDir = "sessions/"+token+"/context.json"
+                with open(jsonDir, "w") as j:
+                  json.dump([{"role":"system","content":systemMessage}],j)
+                txtDir = "sessions/"+token+"/transcript.txt"
+                with open(txtDir, 'w') as f:
+                  f.write('')
+                return token
+
+session_tokens = SessionToken()
+
+@app.route('/get-key',methods=['POST'])
 def getKey():
+  keyName = request.json["keyName"]
+  if keyName == "openai":
     response = jsonify({'key': os.environ.get('OPENAI_API_KEY')})
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
+  else:
+    return "Invalid argument provided.", 400
+
+@app.route('/load-messages',methods=['POST'])
+def load_messages():
+  sessionToken = request.json["session"]
+  if not session_tokens.check_token(sessionToken):
+    return 'Invalid token.', 400
+
+  jsonDir = "sessions/"+sessionToken+"/context.json"
+  with open(jsonDir, "r") as j:
+    return jsonify(json.load(j))
+
+  jsonDir = "sessions/"+sessionToken+"/context.json"
+  with open(jsonDir, "r") as j:
+    return jsonify(json.load(j))
+
+@app.route('/get-session',methods=['GET'])
+def get_session():
+  return jsonify(session_tokens.generate_token());
 
 @app.route('/download-js',methods=['GET'])
 def dl_js():
@@ -28,20 +103,56 @@ def cdn_js():
 
 @app.route('/')
 def index():
-    return render_template('docs.html')
+  return render_template('docs.html')
 
 @app.route('/coach-stream', methods=['POST'])
 def streamCoach():
-  global systemMessage
-  messageData = request.json["messages"]
-  if messageData == None:
-    return 'No message data provided.', 400
-  messageData.insert(0,{"role":"system","content":systemMessage})
+  sessionToken = request.json["session"]
+  if not session_tokens.check_token(sessionToken):
+    return 'Invalid token.', 400
+  
+  messageData = None
+  prompt = request.json["prompt"]
+  if prompt == None:
+    return 'Invalid prompt.', 400
+
+  if sessionToken in tokensInUse:
+    return 'Session in use.', 403
+  
+  tokensInUse.append(sessionToken)
+
+  messageData = session_tokens.load_data(sessionToken)
+  messageData.append({"role":"user","content":prompt})
+
+  jsonDir = "sessions/"+sessionToken+"/context.json"
+  with open(jsonDir, "w") as j:
+    json.dump(messageData,j)
+
+  txtDir = "sessions/"+sessionToken+"/transcript.txt"
+  with open(txtDir, 'a') as f:
+    f.write("User: "+prompt+"\n\n")
+
   def generate():
-    for chunk in openai.ChatCompletion.create(model="gpt-4",messages=messageData,stream=True):
-      content = chunk["choices"][0].get("delta", {}).get("content")
-      if content is not None:
-        yield content
+    final = ""
+    try:
+      for chunk in openai.ChatCompletion.create(model="gpt-4", messages=messageData, stream=True):
+        content = chunk["choices"][0].get("delta", {}).get("content")
+        if content is not None:
+          final += content
+          yield content
+    except GeneratorExit:
+        final += "[STOPPED BY USER]"
+    finally:
+        messageData.append({"role": "assistant", "content": final})
+
+        with open(jsonDir, "w") as j:
+            json.dump(messageData, j)
+
+        txtDir = "sessions/"+sessionToken+"/transcript.txt"
+        with open(txtDir, 'a') as f:
+          f.write("Coach: "+final+"\n\n")
+
+        tokensInUse.remove(sessionToken)
       
   response = Response(stream_with_context( generate()),content_type='text/plain')
   response.headers.add('Access-Control-Allow-Origin', '*')
