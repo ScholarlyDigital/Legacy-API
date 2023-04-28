@@ -1,42 +1,97 @@
-export async function getKey() {
-  try {
-    const rawKey = await ajaxGetRequest('https://api.scholarly.repl.co/openai',12000);
-    const key = rawKey.key
-    console.log("OpenAI key found.");
-    return key;
-  } catch (error) {
-    return undefined;
+export class InvalidArgumentError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'InvalidArgumentError';
   }
 }
 
-async function ajaxGetRequest(url, waitTime) {
-  return new Promise((resolve, reject) => {
-    let api = new XMLHttpRequest();
-    api.timeout = waitTime;
-
-    api.onload = () => {
-      resolve(JSON.parse(api.responseText));
-    };
-      
-    api.ontimeout = (e) => {
-      console.log("Timed out.");
-      reject(new Error("Timed out"));
-    };
-
-    api.open('GET',url);
-    api.send();
-  });
+export class TimeoutError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'TimeoutError';
+  }
 }
 
-async function* fetchCoachStream(messageData, signal) {
-  const serverUrl = "https://api.scholarly.repl.co/coach-stream"
+function checkError(response) {
+  if (response.status === 400) {
+    throw new InvalidArgumentError(`Invalid argument. Status: ${response.status}`);
+  }
+  if (!response.ok) {
+    throw new Error(`Failed request. Status: ${response.status}`);
+  }
+}
 
-  const response = await fetch(serverUrl, {
+export async function getKey(keyName, timeout) {
+  try {
+    const data = '{"keyName":"' + keyName + '"}';
+    const response = await fetch('https://api.scholarly.repl.co/get-key', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: data,
+      signal: AbortSignal.timeout(timeout),
+    });
+
+    checkError(response);
+    return await response.json();
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new TimeoutError(`getKey Error: ${error.message}`);
+    }
+    throw error;
+  }
+}
+
+export async function getSession(timeout) {
+  const url = 'https://api.scholarly.repl.co/get-session';
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(timeout)});
+    checkError(response);
+    const data = await response.json();
+    document.cookie = 'session=' + data;
+    return data;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new TimeoutError(`getSession Error: ${error.message}`);
+    }
+    else { throw error; }
+  }
+}
+
+
+export async function getMessages(session, timeout) {
+  const url = 'https://api.scholarly.repl.co/load-messages';
+  const data = '{"session":"' + session + '"}';
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: data,
+      signal: AbortSignal.timeout(timeout),
+    });
+
+    checkError(response);
+    return await response.json();
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new TimeoutError(`getMessages Error: ${error.message}`);
+    }
+    throw error;
+  }
+}
+
+async function* fetchCoachStream(prompt, session, signal) {
+  const response = await fetch("https://api.scholarly.repl.co/coach-stream", {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ messages: messageData }),
+    body: JSON.stringify({ prompt: prompt, session: session }),
     signal: signal
   });
 
@@ -47,24 +102,30 @@ async function* fetchCoachStream(messageData, signal) {
   const reader = response.body.getReader();
   const decoder = new TextDecoder('utf-8');
 
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) {
-      break;
-    }
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
 
-    const content = decoder.decode(value, { stream: true });
-    yield content;
+      const content = decoder.decode(value, { stream: true });
+      yield content;
 
-    if (signal.aborted) {
-      reader.cancel();
-      break;
+      if (signal.aborted) {
+        break;
+      }
     }
+  } catch (error) {
+    if (error.name === 'AbortError' && reader) {
+      await reader.cancel();
+    }
+    throw error;
   }
 }
 
 
-export async function coachStream(messageData, onContentReceived, onStreamFinished, onError, signal) {
+export async function coachStream(prompt, session, onContentReceived, onStreamFinished, onError, signal) {
   const abortController = new AbortController();
   const onStopped = (manual) => {
     if (onStreamFinished) {
@@ -73,7 +134,7 @@ export async function coachStream(messageData, onContentReceived, onStreamFinish
   };
 
   try {
-    for await (const content of fetchCoachStream(messageData, signal ? signal : abortController.signal)) {
+    for await (const content of fetchCoachStream(prompt, session, signal ? signal : abortController.signal)) {
       onContentReceived(content);
       if (signal && signal.aborted) {
         abortController.abort();
@@ -86,18 +147,8 @@ export async function coachStream(messageData, onContentReceived, onStreamFinish
       onStopped(true);
     } else {
       onError(err);
+      onStreamFinished(false);
     }
   }
 
 };
-
-
-export function createMessagesJSON(userMessages, coachMessages) {
-  var messageData = []
-  for (let i = 0; i < coachMessages.length; i++) {
-    messageData.push({"role":"user","content":userMessages[i]});
-    messageData.push({"role":"assistant","content":coachMessages[i]});
-  }
-  messageData.push({"role":"user","content":userMessages[userMessages.length - 1]});
-  return messageData
-}
