@@ -1,188 +1,136 @@
 import requests
-from typing import List
+from requests.exceptions import RequestException
+from requests_toolbelt.multipart import decoder
+import contextlib
 
-authKey = None
 
-class AuthError(Exception):
-    '''
-    [IMPORTANT] API KEYS ARE NOT YET IMPLEMENTED AND HENCE THIS FUNCTION IS NOT IN USE YET.
+class InvalidArgumentError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        self.name = 'InvalidArgumentError'
 
-    AuthError is a custom exception based on the general exception that is Exception.
 
-    It is used when the Scholarly API key provided is invalid.
+class TimeoutError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        self.name = 'TimeoutError'
 
-    '''
-    pass
 
-class InvalidArgument(ValueError):
-    '''
-    InvalidArgument is a custom exception based on ValueError.
+def check_error(response):
+    """
+    Checks the response for possible errors and raises appropriate exceptions.
 
-    It is used in cases where specific values for functions are not valid, and more detailed errors are desired.
+    Args:
+        response (requests.Response): The response object to be checked for errors.
+    """
+    if response.status_code == 400:
+        raise InvalidArgumentError(f'Invalid argument. Status: {response.status_code}')
+    if not response.ok:
+        raise Exception(f'Failed request. Status: {response.status_code}')
 
-    '''
-    pass
 
-def setKey(key: str) -> None:
-    '''
-    setKey() is a void function that sets the Scholarly API key for authentication.
+def get_key(key_name, timeout):
+    """
+    Fetches the API key with the provided key name.
 
-    Arguments:
+    Args:
+        key_name (str): The name of the API key to fetch.
+        timeout (float): The request timeout in seconds.
 
-    - key:
-        Description: An argument of type string that will contain the API key to be set.
-        Valid arguments: Any string
-
-    Raises:
-
-    - None
-
-    '''
-    global authKey
-    authKey = key
-
-def isValidKey() -> bool:
-    '''
-    [IMPLICIT FUNCTION] THIS FUNCTION IS MADE TO IMPLICITLY VERIFY KEYS WHEN THE SCHOLARLY API SERVER IS NOT CONTACTED
-
-    isValidKey() is an implicit function that returns a boolean value stating whether a Scholarly API key is valid or not.
-
-    Arguments:
-
-    - [IMPLICIT] authKey:
-        Description: Variable of type string derived from global variable authKey that will be checked for validity.
-
-    Raises:
-
-    - ConnectionError: Raised when a successful connection to the API server cannot be made.
-    - RequestException: Raised when an unknown general exception is faced from the requests module.
-    - JSONDecodeError: Raised when the return of the API server cannot be decoded.
-    - Exception: Raised when an unknown error is faced.
-
-    '''
-    #Because API keys are not currently implemented, this function will return True for the time being.
-    return True
-
-    global authKey
+    Returns:
+        dict: The JSON response containing the API key.
+    """
     try:
-        r = requests.post('https://api.scholarly.repl.co/verify-key', json={"key": authKey})
-        r.raise_for_status()
-        return r.json()['valid']
-    except Exception as e:
-        raise e
+        data = {"keyName": key_name}
+        response = requests.post('https://api.scholarly.repl.co/get-key', json=data, timeout=timeout)
+        check_error(response)
+        return response.json()
+    except RequestException as error:
+        if error.__class__.__name__ == 'timeout':
+            raise TimeoutError(f'getKey Error: {error}')
+        raise error
 
-def getKey(keyName: str) -> str:
-    '''
-    getKey() is a function that returns any API keys or authorization bearers necessary.
 
-    Arguments:
+def get_session(timeout):
+    """
+    Fetches a new session ID.
 
-    - keyName: 
-        Description: An argument of type string that will determine what key will be returned.
-        Valid arguments: "openai"
+    Args:
+        timeout (float): The request timeout in seconds.
 
-    Raises:
-
-    - AuthError: Raised when an invalid Scholarly API key is set. (NOT IN USE)
-    - InvalidArgument: Raised when the keyName argument provided is invalid.
-    - ConnectionError: Raised when a successful connection to the API server cannot be made.
-    - RequestException: Raised when an unknown general exception is faced from the requests module.
-    - JSONDecodeError: Raised when the return of the API server cannot be decoded.
-    - Exception: Raised when an unknown error is faced.
-    '''
-    global authKey
-
-    if keyName != "openai":
-        raise InvalidArgument
-
+    Returns:
+        dict: The JSON response containing the session ID.
+    """
+    url = 'https://api.scholarly.repl.co/get-session'
     try:
-        r = requests.post('https://api.scholarly.repl.co/get-key', json={"keyName": keyName}, auth=authKey)
-        r.raise_for_status()
+        response = requests.get(url, timeout=timeout)
+        check_error(response)
+        data = response.json()
+        return data
+    except RequestException as error:
+        if error.__class__.__name__ == 'timeout':
+            raise TimeoutError(f'getSession Error: {error}')
+        raise error
 
-        if r.status_code == 403:
-            raise AuthError("Invalid Scholarly API key.")
 
-        return r.json()['key']
-    except Exception as e:
-        raise e
+def get_messages(session, timeout):
+    """
+    Fetches the messages for the provided session ID.
 
-def coachStream(userData: List[str], coachData: List[str], chunkSize = 10):
-    '''
-    coachStream() is a function that yields a continuous content stream from the language model Coach.
+    Args:
+        session (str): The session ID.
+        timeout (float): The request timeout in seconds.
 
-    Arguments:
-
-    - userData: 
-        Description: An argument of type list that will provide previous user chat history. Must be in CHRONOLOGICAL order.
-
-    - coachData: 
-        Description: An argument of type list that will provide previous coach chat history. Must be in CHRONOLOGICAL order.
-
-    [IMPORTANT] THE LENGTH OF userData MUST ALWAYS BE ONE MORE THAN coachData
-
-    - chunkSize (Optional):
-        Description: An argument of type integer that will dictate the maximum size of characters for each chunk of content yielded.
-        Defaults to: 10
-
-    Raises:
-
-    - AuthError: Raised when an invalid Scholarly API key is set. (NOT IN USE)
-    - InvalidArgument: Raised when the userData and coachData arguments provided are invalid.
-    - ConnectionError: Raised when a successful connection to the API server cannot be made.
-    - RequestException: Raised when an unknown general exception is faced from the requests module.
-    - JSONDecodeError: Raised when the return of the API server cannot be decoded.
-    - Exception: Raised when an unknown error is faced.
-
-    '''
-    global authKey
+    Returns:
+        dict: The JSON response containing the messages for the session.
+    """
+    url = 'https://api.scholarly.repl.co/load-messages'
+    data = {"session": session}
     try:
-        data = formatMessages(userData,coachData)
-    
-        with requests.post(
-            'https://api.scholarly.repl.co/coach-stream', headers=None, auth=authKey, stream=True, json={"messages": data}
-        ) as resp:
-            
-            resp.raise_for_status()
+        response = requests.post(url, json=data, timeout=timeout)
+        check_error(response)
+        return response.json()
+    except RequestException as error:
+        if error.__class__.__name__ == 'timeout':
+            raise TimeoutError(f'getMessages Error: {error}')
+        raise error
 
-            if resp.status_code == 403:
-                raise AuthError("Invalid Scholarly API key.")
 
-            if resp.status_code == 500:
-                raise InvalidArgument("Invalid argument provided.")
+@contextlib.contextmanager
+def coach_stream(prompt, session, timeout=None):
+    """
+    Creates a context manager for the coach stream functionality.
 
-            for chunk in resp.iter_content(chunkSize, decode_unicode=True):
-                if chunk: yield chunk
-    except Exception as e:
-        raise e
+    Args:
+        prompt (str): The prompt to send to the coach stream.
+        session (str): The session ID.
+        timeout (float, optional): The request timeout in seconds.
 
-def formatMessages(userMessages: List[str], coachMessages: List[str]) -> List:
-    '''
-    [IMPLICIT FUNCTION] THIS FUNCTION IS MADE TO IMPLICITLY FORMAT MESSAGES FOR coachStream()
+    Yields:
+        str: The content chunks returned by the coach stream.
+    """
+    url = 'https://api.scholarly.repl.co/coach-stream'
+    stream_data = {"prompt": prompt, "session": session}
+    content_boundary = 'my-boundary'
+    headers = {'Content-Type': f'multipart/form-data; boundary={content_boundary}'}
 
-    formatMessages() is an implicit function that returns a formatted version of previous chats for the syntax of coachStream().
+    with requests.post(url, data=stream_data, headers=headers, stream=True, timeout=timeout) as r:
+        check_error(r)
+        yield from parse_multipart_stream_response(r, content_boundary)
 
-    Arguments:
 
-    - userMessages: 
-        Description: An argument of type list that will provide previous chat history of the user's messages. Must be in chronological order.
+def parse_multipart_stream_response(response, content_boundary):
+    """
+    Parses the multipart stream response from the coach stream.
 
-    - coachMessages:
-        Description: An argument of type list that will provide previous chat history of coach's messages. Must be in chronological order.
+    Args:
+        response (requests.Response): The response object to be parsed.
+        content_boundary (str): The content boundary used in the response.
 
-    Raises:
+    Yields:
+        str: The content chunks returned by the coach stream.
+    """
+    multipart_data = decoder.MultipartDecoder.from_response(response)
 
-    - InvalidArgument: Raised when the lists provided don't match proper syntax (the length of userMessages must be one more than coachMessages).
-
-    '''
-    messageData = []
-
-    if len(userMessages) != len(coachMessages) + 1:
-        raise InvalidArgument("The length of userMessages must be one more than the length of coachMessages.")
-
-    for i in range(len(coachMessages)):
-        messageData.append({"role": "user", "content": userMessages[i]})
-        messageData.append({"role": "assistant", "content": coachMessages[i]})
-
-    messageData.append({"role": "user", "content": userMessages[-1]})
-
-    return messageData
+    for part in multipart_data.parts:
+        yield part.content.decode("utf-8")
