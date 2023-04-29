@@ -1,3 +1,6 @@
+/**
+ * Represents an error for invalid arguments passed to a function.
+ */
 export class InvalidArgumentError extends Error {
   constructor(message) {
     super(message);
@@ -5,6 +8,9 @@ export class InvalidArgumentError extends Error {
   }
 }
 
+/**
+ * Represents a custom error class for timeouts.
+ */
 export class TimeoutError extends Error {
   constructor(message) {
     super(message);
@@ -12,6 +18,10 @@ export class TimeoutError extends Error {
   }
 }
 
+/**
+ * Checks the response for possible errors and throws appropriate exceptions.
+ * @param {Response} response - The response object to be checked for errors.
+ */
 function checkError(response) {
   if (response.status === 400) {
     throw new InvalidArgumentError(`Invalid argument. Status: ${response.status}`);
@@ -21,6 +31,12 @@ function checkError(response) {
   }
 }
 
+/**
+ * Fetches the API key with the provided key name.
+ * @param {string} keyName - The name of the API key to fetch.
+ * @param {number} timeout - The request timeout in milliseconds.
+ * @returns {Promise} A promise that resolves to the JSON response containing the API key.
+ */
 export async function getKey(keyName, timeout) {
   try {
     const data = '{"keyName":"' + keyName + '"}';
@@ -44,6 +60,11 @@ export async function getKey(keyName, timeout) {
   }
 }
 
+/**
+ * Fetches a new session ID.
+ * @param {number} timeout - The request timeout in milliseconds.
+ * @returns {Promise} A promise that resolves to the JSON response containing the session ID.
+ */
 export async function getSession(timeout) {
   const url = 'https://api.scholarly.repl.co/get-session';
   try {
@@ -60,7 +81,12 @@ export async function getSession(timeout) {
   }
 }
 
-
+/**
+ * Fetches the messages for the provided session ID.
+ * @param {string} session - The session ID.
+ * @param {number} timeout - The request timeout in milliseconds.
+ * @returns {Promise} A promise that resolves to the JSON response containing the messages for the session.
+ */
 export async function getMessages(session, timeout) {
   const url = 'https://api.scholarly.repl.co/load-messages';
   const data = '{"session":"' + session + '"}';
@@ -85,6 +111,13 @@ export async function getMessages(session, timeout) {
   }
 }
 
+/**
+ * Fetches the coach stream for the given prompt and session ID, returning an async generator with content chunks.
+ * @param {string} prompt - The prompt to send to the coach stream.
+ * @param {string} session - The session ID.
+ * @param {AbortSignal} signal - The optional AbortSignal for handling cancellations.
+ * @returns {AsyncGenerator} An async generator that yields content chunks from the coach stream.
+ */
 async function* fetchCoachStream(prompt, session, signal) {
   const response = await fetch("https://api.scholarly.repl.co/coach-stream", {
     method: 'POST',
@@ -124,7 +157,15 @@ async function* fetchCoachStream(prompt, session, signal) {
   }
 }
 
-
+/**
+ * Streams content from the coach API given a prompt and sessionID.
+ * @param {string} prompt - The prompt to send to the coach stream.
+ * @param {string} session - The session ID.
+ * @param {function} onContentReceived - Callback function for handling content received.
+ * @param {function} onStreamFinished - Callback function for when the stream has finished.
+ * @param {function} onError - Callback function for handling errors during streaming.
+ * @param {AbortSignal} signal - The optional AbortSignal for handling cancellations.
+ */
 export async function coachStream(prompt, session, onContentReceived, onStreamFinished, onError, signal) {
   const abortController = new AbortController();
   const onStopped = (manual) => {
