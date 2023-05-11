@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, send_from_directory, Response, stream_with_context,request
+from flask import Flask, jsonify, render_template, send_from_directory, Response, stream_with_context, request, make_response
 from flask_cors import CORS
 import os
 import openai
@@ -13,55 +13,59 @@ systemMessage = os.environ.get('SYSTEM_MESSAGE')
 
 tokensInUse = []
 
+
 class SessionToken:
-    def __init__(self, base_dir="sessions"):
-        self.base_dir = base_dir
-        self.tokens = self.load_tokens()
 
-        if not os.path.exists(self.base_dir):
-            os.makedirs(self.base_dir)
+  def __init__(self, base_dir="sessions"):
+    self.base_dir = base_dir
+    self.tokens = self.load_tokens()
 
-    def load_tokens(self):
-        if os.path.exists(self.base_dir):
-            return os.listdir(self.base_dir)
-        else:
-            return []
+    if not os.path.exists(self.base_dir):
+      os.makedirs(self.base_dir)
 
-    def get_all(self):  
-      self.tokens = self.load_tokens()
-      return self.tokens
+  def load_tokens(self):
+    if os.path.exists(self.base_dir):
+      return os.listdir(self.base_dir)
+    else:
+      return []
 
-    def load_data(self, token):
-      if not self.check_token(token):
-        return None
+  def get_all(self):
+    self.tokens = self.load_tokens()
+    return self.tokens
 
-      jsonDir = "sessions/"+token+"/context.json"
-      with open(jsonDir, "r") as j:
-        return json.load(j)
+  def load_data(self, token):
+    if not self.check_token(token):
+      return None
 
-    def check_token(self, token):
-      return token in self.get_all()
+    jsonDir = "sessions/" + token + "/context.json"
+    with open(jsonDir, "r") as j:
+      return json.load(j)
 
-    def generate_token(self):
-        global systemMessage
-        self.tokens = self.load_tokens()
-        while True:
-            token = str(uuid.UUID(int=secrets.randbits(128), version=4))
-            if token not in self.tokens:
-                self.tokens.append(token)
-                session_dir = os.path.join(self.base_dir, token)
-                os.makedirs(session_dir)
-                jsonDir = "sessions/"+token+"/context.json"
-                with open(jsonDir, "w") as j:
-                  json.dump([{"role":"system","content":systemMessage}],j)
-                txtDir = "sessions/"+token+"/transcript.txt"
-                with open(txtDir, 'w') as f:
-                  f.write('')
-                return token
+  def check_token(self, token):
+    return token in self.get_all()
+
+  def generate_token(self):
+    global systemMessage
+    self.tokens = self.load_tokens()
+    while True:
+      token = str(uuid.UUID(int=secrets.randbits(128), version=4))
+      if token not in self.tokens:
+        self.tokens.append(token)
+        session_dir = os.path.join(self.base_dir, token)
+        os.makedirs(session_dir)
+        jsonDir = "sessions/" + token + "/context.json"
+        with open(jsonDir, "w") as j:
+          json.dump([{"role": "system", "content": systemMessage}], j)
+        txtDir = "sessions/" + token + "/transcript.txt"
+        with open(txtDir, 'w') as f:
+          f.write('')
+        return token
+
 
 session_tokens = SessionToken()
 
-@app.route('/get-key',methods=['POST'])
+
+@app.route('/get-key', methods=['POST'])
 def getKey():
   keyName = request.json["keyName"]
   if keyName == "openai":
@@ -71,66 +75,85 @@ def getKey():
   else:
     return "Invalid argument provided.", 400
 
-@app.route('/load-messages',methods=['POST'])
+
+@app.route('/load-messages', methods=['POST'])
 def load_messages():
   sessionToken = request.json["session"]
   if not session_tokens.check_token(sessionToken):
     return 'Invalid token.', 400
 
-  jsonDir = "sessions/"+sessionToken+"/context.json"
+  jsonDir = "sessions/" + sessionToken + "/context.json"
   with open(jsonDir, "r") as j:
     return jsonify(json.load(j))
 
-  jsonDir = "sessions/"+sessionToken+"/context.json"
+  jsonDir = "sessions/" + sessionToken + "/context.json"
   with open(jsonDir, "r") as j:
     return jsonify(json.load(j))
 
-@app.route('/get-session',methods=['GET'])
+
+@app.route('/get-session', methods=['GET'])
 def get_session():
-  return jsonify(session_tokens.generate_token());
+  return jsonify(session_tokens.generate_token())
 
-@app.route('/download-js',methods=['GET'])
+
+@app.route('/download-js', methods=['GET'])
 def dl_js():
-    return send_from_directory('static','scholarly_api_latest.js', as_attachment=True)
+  return send_from_directory('static',
+                             'scholarly_api_latest.js',
+                             as_attachment=True)
 
-@app.route('/download-py',methods=['GET'])
+
+@app.route('/download-py', methods=['GET'])
 def dl_py():
-    return send_from_directory('static','scholarly_api_latest.py', as_attachment=True)
+  return send_from_directory('static',
+                             'scholarly_api_latest.py',
+                             as_attachment=True)
 
-@app.route('/cdn-js',methods=['GET'])
+
+@app.route('/cdn-js', methods=['GET'])
 def cdn_js():
-    return send_from_directory('static','scholarly_api_latest.js')
+  return send_from_directory('static', 'scholarly_api_latest.js')
+
 
 @app.route('/')
 def index():
   return render_template('docs.html')
 
-@app.route('/coach-stream', methods=['POST'])
-def streamCoach():
+@app.route('/coach', methods=['POST'])
+def coach():
   sessionToken = request.json["session"]
   if not session_tokens.check_token(sessionToken):
     return 'Invalid token.', 400
-  
-  messageData = None
+
   prompt = request.json["prompt"]
-  if prompt == None:
+  if prompt == None or type(prompt) != str:
     return 'Invalid prompt.', 400
+
+  stream = request.json["stream"]
+  if stream == None or type(stream) != bool:
+    return 'Invalid stream argument.', 400
 
   if sessionToken in tokensInUse:
     return 'Session in use.', 403
-  
+
   tokensInUse.append(sessionToken)
 
   messageData = session_tokens.load_data(sessionToken)
-  messageData.append({"role":"user","content":prompt})
 
-  jsonDir = "sessions/"+sessionToken+"/context.json"
+  if len(messageData) > 11:
+    newMessageData = messageData[-10:]
+    newMessageData.insert(0, messageData[0])
+    messageData = newMessageData
+
+  messageData.append({"role": "user", "content": prompt})
+
+  jsonDir = "sessions/" + sessionToken + "/context.json"
   with open(jsonDir, "w") as j:
-    json.dump(messageData,j)
+    json.dump(messageData, j)
 
-  txtDir = "sessions/"+sessionToken+"/transcript.txt"
+  txtDir = "sessions/" + sessionToken + "/transcript.txt"
   with open(txtDir, 'a') as f:
-    f.write("User: "+prompt+"\n\n")
+    f.write("User: " + prompt + "\n\n")
 
   def generate():
     final = ""
@@ -141,21 +164,27 @@ def streamCoach():
           final += content
           yield content
     except GeneratorExit:
-        final += "[STOPPED BY USER]"
+      final += "[STOPPED BY USER]"
     finally:
-        messageData.append({"role": "assistant", "content": final})
+      messageData.append({"role": "assistant", "content": final})
 
-        with open(jsonDir, "w") as j:
-            json.dump(messageData, j)
+      with open(jsonDir, "w") as j:
+        json.dump(messageData, j)
 
-        txtDir = "sessions/"+sessionToken+"/transcript.txt"
-        with open(txtDir, 'a') as f:
-          f.write("Coach: "+final+"\n\n")
+      txtDir = "sessions/" + sessionToken + "/transcript.txt"
+      with open(txtDir, 'a') as f:
+        f.write("Coach: " + final + "\n\n")
 
-        tokensInUse.remove(sessionToken)
-      
-  response = Response(stream_with_context( generate()),content_type='text/plain')
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-  
+      tokensInUse.remove(sessionToken)
+
+  if stream:
+    response = Response(stream_with_context(generate()), content_type='text/plain')
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+  else:
+    content = openai.ChatCompletion.create(model="gpt-4", messages=messageData)
+    content = content["choices"][0]["message"]["content"]
+    return jsonify(content)
+
+
 app.run(host='0.0.0.0', threaded=True)
