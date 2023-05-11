@@ -139,16 +139,16 @@
                         </p>
                         <ul>
                             <li>
-                                <span class="code">coach(prompt)</span> &mdash; Make a chat request with Scholarly's custom language model, Coach. Prompt is an argument for the question. [INCOMPLETE]
+                                <span class="code">coach(prompt, session)</span> &mdash; Make a chat request with Scholarly's custom language model, Coach. Prompt is an argument for the question, and session is a string for the session ID.
                             </li>
                             <li>
-                                <span class="code">markImage(img)</span> &mdash; Mark and provide feedback to handwritten work via images. Takes in an image file of PNG/JPG. [INCOMPLETE]
+                                <span class="code">get_session()</span> &mdash; Get a new session for stored message history with coach.
                             </li>
                             <li>
-                                <span class="code">markFile(pdf)</span> &mdash; Mark and provide feedback to digital work via pdf. Takes in a PDF file argument. [INCOMPLETE]
+                                <span class="code">load_messages(session)</span> &mdash; Load Coach messages from a session. Takes in a string for the session as an argument.
                             </li>
                             <li>
-                                <span class="code">getKey()</span> &mdash; Recieve OpenAI keys for custom services not yet provided via API. No arguments. [AVAILABLE]
+                                <span class="code">get_key(key_name)</span> &mdash; Recieve external API keys for custom services not yet provided via API. The name of the key is a string argument.
                             </li>
                         </ul>
                 </div>
@@ -179,17 +179,15 @@
                             <button class="btn btn-sm copy-button" type="button" onclick="copyCode(this, 'code-block-1')">
                                 <i class="fa fa-clipboard" aria-hidden="true"></i> Copy
                             </button>
-                            <pre class="m-0"><code class="html hljs xml" id="code-block-1"><span class="javascript"><span class="hljs-keyword">import</span> { <span class="hljs-function">getKey</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">"https://api.scholarly.repl.co/cdn-js"</span>;
+                            <pre class="m-0"><code class="html hljs xml" id="code-block-1"><span class="javascript"><span class="hljs-keyword">import</span> { <span class="hljs-function">coachResponse</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">"https://api.scholarly.repl.co/cdn-js"</span>;
                               
-<span class="hljs-keyword">var</span><span class="hljs-variable"> openai_key</span> = <span class="hljs-literal">await </span><span class="hljs-function">getKey()</span>;
-<span class="hljs-keyword">if</span> (<span class="hljs-variable">openai_key</span> == <span class="hljs-literal">undefined</span>) {
-  <span class="hljs-comment">//Handle no key found logic here</span>
-}</span></code></pre>
+<span class="hljs-keyword">var </span><span class="hljs-variable">message</span> = <span class="hljs-literal">await </span><span class="hljs-function">coachResponse(<span class="hljs-string">"Hello world!"</span>)</span>;
+<span class="hljs-keyword">console</span>.<span class="hljs-function">log(<span class="hljs-variable">message</span>)</span>;</code></pre>
                         </div>
                     </div>
                     <div class="content">
                         <p>
-                            <strong>Pleast note</strong>, the JS file has other functions than  <span class="code"><span class="hljs-function">getKey</span></span>. In this example, it is used to showcase how to import the file and what to expect. For example, adding the <span class="code"><span class="hljs-function">coach()</span></span> function to recieve messages from the custom language model is also available. It is up to <strong>you</strong> what modules you add to <span class="code"><span class="hljs-keyword">import</span></span>.
+                            <strong>Pleast note</strong>, the JS file has other functions than  <span class="code"><span class="hljs-function">coachResponse</span></span>. In this example, it is used to showcase how to import the file and what to expect. For example, adding the <span class="code"><span class="hljs-function">getSession()</span></span> function to store messages from the custom language model is also available. It is up to <strong>you</strong> what functions you add to <span class="code"><span class="hljs-keyword">import</span></span> Always remember to read the documentation in the module for up-to-date and more precise information.
                         </p>
                     </div>
                 </div>
@@ -220,11 +218,10 @@
                             <button class="btn btn-sm copy-button" type="button" onclick="copyCode(this, 'cdn-code-block')">
                                 <i class="fa fa-clipboard" aria-hidden="true"></i> Copy
                             </button>
-                            <pre class="m-0"><code class="html hljs" id="cdn-code-block"><span class="hljs-keyword">import</span> <span class="hljs-built_in">scholarly_api_latest</span> <span class="hljs-keyword">as</span> <span class="hljs-section">sAPI</span>
+                            <pre class="m-0"><code class="html hljs" id="cdn-code-block"><span class="hljs-keyword">import</span> <span class="hljs-built_in">scholarly_api_latest</span> <span class="hljs-keyword">as</span> <span class="hljs-variable">sAPI</span>
 
-<span class="hljs-variable">openai_key</span> = <span class="hljs-variable">sAPI</span>.<span class="hljs-function">getKey()</span>
-<span class="hljs-keyword">if</span> <span class="hljs-variable">openai_key</span> == <span class="hljs-literal">None</span>:
-  <span class="hljs-comment">#Handle no key found logic here</span></code></pre>
+<span class="hljs-variable">message</span> = <span class="hljs-variable">sAPI</span>.<span class="hljs-function">coach(<span class="hljs-string">"Hello World!"</span>)</span>
+<span class="hljs-function">print</span>(<span class="hljs-variable">message</span>)</code></pre>
                         </div>
                     </div>
                 </div>
@@ -240,7 +237,7 @@
                         <p>
                             Once you have downloaded and setup the modules of choice, the possibilites are endless. As more functions appear, devs will be able to build a Scholarly app on any platform, as all backend databases, algorithms, etc. will be accesible via API. This allows cross-platform with the luxury of no major back-end hastles.
                         </p>
-                        <p>All code is available for devs to see, and for now, no in-depth documentation on the functions needs to be released. As well as this, many functions aren't ready yet, and their status will be updated.</p>
+                        <p>All code is available for devs to see, and for now, no in-depth documentation on the functions needs to be released on the website. All current functions are fully documented in both modules via docstrings, so have a look there next!</p>
                     </div>
                 </div>
                 <!-- Where to next section end -->
