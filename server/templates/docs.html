@@ -135,11 +135,11 @@
                             <a href="#functions" class="ml-5 text-decoration-none">#</a>
                         </h2>
                         <p>
-                            Here is an overview of all the functions provided by Schoarly. <strong>All JavaScript versions of the functions are asynchronous</strong> requiring an <span class="code">await</span> statement. These are not finished, so pay attention to the following:
+                            Here is an overview of all the functions provided by Schoarly. <strong>All JavaScript versions of the functions are asynchronous</strong> requiring an <span class="code">await</span> statement. Here are some of the basic ones:
                         </p>
                         <ul>
                             <li>
-                                <span class="code">coach(prompt, session)</span> &mdash; Make a chat request with Scholarly's custom language model, Coach. Prompt is an argument for the question, and session is a string for the session ID.
+                                <span class="code">coach(prompt, session, stream)</span> &mdash; Make a chat request with Scholarly's custom language model, Coach. Prompt is an argument for the question, and session is a string for the session ID. Coach can also stream responses using yield, but only when the stream argument is set to true.
                             </li>
                             <li>
                                 <span class="code">get_session()</span> &mdash; Get a new session for stored message history with coach.
