@@ -39,7 +39,7 @@ def get_key(key_name, timeout=None):
         timeout (float, optional): The request timeout in seconds.
 
     Returns:
-        dict: The JSON response containing the API key.
+        str: A string containing the API key.
     """
     try:
         data = {"keyName": key_name}
@@ -60,7 +60,7 @@ def get_session(timeout=None):
         timeout (float, optional): The request timeout in seconds.
 
     Returns:
-        dict: The JSON response containing the session ID.
+        dict: The string containing the session ID.
     """
     url = 'https://api.scholarly.repl.co/get-session'
     try:
@@ -83,7 +83,7 @@ def get_messages(session, timeout=None):
         timeout (float, optional): The request timeout in seconds.
 
     Returns:
-        dict: The JSON response containing the messages for the session.
+        list: A list containing the messages for the session. Formatted for OpenAI API.
     """
     url = 'https://api.scholarly.repl.co/load-messages'
     data = {"session": session}
