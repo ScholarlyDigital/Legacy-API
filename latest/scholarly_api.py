@@ -1,7 +1,5 @@
 import requests
 from requests.exceptions import RequestException
-from requests_toolbelt.multipart import decoder
-import contextlib
 import json
 
 
@@ -97,34 +95,36 @@ def get_messages(session, timeout=None):
         raise error
 
 
-@contextlib.contextmanager
 def coach_stream(prompt, session=get_session(), timeout=None):
     """
-    Creates a context manager for the coach stream functionality.
+    Yields responses from a data stream from Coach.
 
     Args:
-        prompt (str): The prompt to send to the coach stream.
-        session (str): The session ID.
+        prompt (str): The prompt to send to Coach .
+        session (str): The session ID. Defaults to a new session.
         timeout (float, optional): The request timeout in seconds.
 
     Yields:
         str: The content chunks returned by the coach stream.
     """
     url = 'https://api.scholarly.repl.co/coach'
-    stream_data = json.dumps({"prompt": prompt, "session": session, "stream":True})
-    headers = {'Content-Type': 'application/json'}
+    data = {
+        "session": session,
+        "prompt": prompt,
+        "stream": True
+    }
 
-    with requests.post(url, data=stream_data, headers=headers, stream=True, timeout=timeout) as r:
-        check_error(r)
-        yield from parse_multipart_stream_response(r)
+    with requests.post(url, json=data, stream=True) as response:
+        for chunk in response.iter_content(chunk_size=None, decode_unicode=True):
+            yield chunk
 
 def coach_response(prompt, session=get_session(), timeout=None):
     """
-    Returns a final response for the prompt_coach() fucntion.
+    Prompt Coach to recieve a message.
 
     Args:
         prompt (str): The prompt to send to the coach stream.
-        session (str): The session ID.
+        session (str): The session ID. Defaults to a new session.
         timeout (float, optional): The request timeout in seconds.
 
     Returns:
@@ -141,20 +141,3 @@ def coach_response(prompt, session=get_session(), timeout=None):
         if error.__class__.__name__ == 'timeout':
             raise TimeoutError(f'getMessages Error: {error}')
         raise error
-
-
-def parse_multipart_stream_response(response):
-    """
-    Parses the multipart stream response from the coach stream.
-
-    Args:
-        response (requests.Response): The response object to be parsed.
-
-    Yields:
-        str: The content chunks returned by the coach stream.
-    """
-    lines = response.iter_lines()
-    for line in lines:
-        decoded_line = line.decode("utf-8")
-        if decoded_line:
-            yield decoded_line
