@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, send_from_directory, Response, stream_with_context, request, make_response
+from flask import Flask, jsonify, render_template, send_from_directory, Response, stream_with_context, request
 from flask_cors import CORS
 import os
 import openai
@@ -98,16 +98,12 @@ def get_session():
 
 @app.route('/download-js', methods=['GET'])
 def dl_js():
-  return send_from_directory('static',
-                             'scholarly_api_latest.js',
-                             as_attachment=True)
+  return send_from_directory('static', 'scholarly_api_latest.js', as_attachment=True)
 
 
 @app.route('/download-py', methods=['GET'])
 def dl_py():
-  return send_from_directory('static',
-                             'scholarly_api_latest.py',
-                             as_attachment=True)
+  return send_from_directory('static','scholarly_api_latest.py', as_attachment=True)
 
 
 @app.route('/cdn-js', methods=['GET'])
@@ -118,6 +114,7 @@ def cdn_js():
 @app.route('/')
 def index():
   return render_template('docs.html')
+
 
 @app.route('/coach', methods=['POST'])
 def coach():
@@ -165,6 +162,8 @@ def coach():
           yield content
     except GeneratorExit:
       final += "[STOPPED BY USER]"
+    except:
+      final += "[ERROR OCCURED]"
     finally:
       messageData.append({"role": "assistant", "content": final})
 
@@ -182,9 +181,33 @@ def coach():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
   else:
-    content = openai.ChatCompletion.create(model="gpt-4", messages=messageData)
-    content = content["choices"][0]["message"]["content"]
-    return jsonify(content)
+    try:
+      content = openai.ChatCompletion.create(model="gpt-4",messages=messageData)
+      final = content["choices"][0]["message"]["content"]
+      messageData.append({"role": "assistant", "content": final})
+
+      with open(jsonDir, "w") as j:
+        json.dump(messageData, j)
+
+      txtDir = "sessions/" + sessionToken + "/transcript.txt"
+      with open(txtDir, 'a') as f:
+        f.write("Coach: " + final + "\n\n")
+
+      tokensInUse.remove(sessionToken)
+
+      return jsonify(final)
+    except:
+      final = "[ERROR OCCURRED]"
+      messageData.append({"role": "assistant", "content": final})
+
+      with open(jsonDir, "w") as j:
+        json.dump(messageData, j)
+
+      txtDir = "sessions/" + sessionToken + "/transcript.txt"
+      with open(txtDir, 'a') as f:
+        f.write("Coach: " + final + "\n\n")
+
+      tokensInUse.remove(sessionToken)
 
 
 app.run(host='0.0.0.0', threaded=True)
