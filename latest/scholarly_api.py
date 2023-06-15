@@ -117,11 +117,14 @@ def coach(prompt, session=get_session(), stream=False, timeout=None):
   url = 'https://api.scholarly.repl.co/coach'
   data = {"session": session, "prompt": prompt, "stream": stream}
 
-  try:
-    if stream:
-      with requests.post(url, json=data, timeout=timeout, stream=True) as response:
+  def stream_response():
+    with requests.post(url, json=data, timeout=timeout, stream=True) as response:
         for chunk in response.iter_content(chunk_size=None, decode_unicode=True):
           yield chunk
+  
+  try:
+    if stream:
+      return stream_response()
     else:
       response = requests.post(url, json=data, timeout=timeout)
       check_error(response)
