@@ -71,7 +71,6 @@ export class InvalidArgumentError extends Error {
       const response = await fetch(url, { signal: AbortSignal.timeout(timeout)});
       checkError(response);
       const data = await response.json();
-      document.cookie = 'session=' + data;
       return data;
     } catch (error) {
       if (error.name === 'AbortError') {
