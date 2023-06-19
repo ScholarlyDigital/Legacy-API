@@ -155,24 +155,33 @@ def coach():
   def generate():
     final = ""
     try:
+      txtDir = "sessions/" + sessionToken + "/transcript.txt"
+      with open(txtDir, 'a') as f:
+        f.write("Coach: ")
       for chunk in openai.ChatCompletion.create(model="gpt-4", messages=messageData, stream=True):
         content = chunk["choices"][0].get("delta", {}).get("content")
         if content is not None:
           final += content
+          with open(txtDir, 'a') as f:
+            f.write(content)
           yield content
     except GeneratorExit:
       final += "[STOPPED BY USER]"
+      with open(txtDir, 'a') as f:
+        f.write("[STOPPED BY USER]")
     except:
       final += "[ERROR OCCURED]"
+      with open(txtDir, 'a') as f:
+        f.write("[ERROR OCCURED]")
+      yield "[ERROR OCCURED]"
     finally:
       messageData.append({"role": "assistant", "content": final})
 
       with open(jsonDir, "w") as j:
         json.dump(messageData, j)
 
-      txtDir = "sessions/" + sessionToken + "/transcript.txt"
       with open(txtDir, 'a') as f:
-        f.write("Coach: " + final + "\n\n")
+        f.write("\n\n")
 
       tokensInUse.remove(sessionToken)
 
@@ -208,6 +217,8 @@ def coach():
         f.write("Coach: " + final + "\n\n")
 
       tokensInUse.remove(sessionToken)
+
+      return jsonify(final)
 
 
 app.run(host='0.0.0.0', threaded=True)
