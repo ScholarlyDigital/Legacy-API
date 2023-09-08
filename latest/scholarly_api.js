@@ -87,7 +87,7 @@ export class InvalidArgumentError extends Error {
    * @returns {Promise} A promise that resolves to the JSON response containing the messages for the session.
    */
   export async function getMessages(session, timeout) {
-    const url = 'https://api.scholarly.repl.co/load-messages';
+    const url = 'https://api.scholarly.repl.co/get-messages';
     const data = '{"session":"' + session + '"}';
     try {
       const response = await fetch(url, {
