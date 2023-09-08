@@ -76,19 +76,15 @@ def getKey():
     return "Invalid argument provided.", 400
 
 
-@app.route('/load-messages', methods=['POST'])
-def load_messages():
+@app.route('/get-messages', methods=['POST'])
+def get_messages():
   sessionToken = request.json["session"]
   if not session_tokens.check_token(sessionToken):
     return 'Invalid token.', 400
 
   jsonDir = "sessions/" + sessionToken + "/context.json"
   with open(jsonDir, "r") as j:
-    return jsonify(json.load(j))
-
-  jsonDir = "sessions/" + sessionToken + "/context.json"
-  with open(jsonDir, "r") as j:
-    return jsonify(json.load(j))
+    return jsonify(json.load(j)[1:])
 
 
 @app.route('/get-session', methods=['GET'])
