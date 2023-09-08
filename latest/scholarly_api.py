@@ -86,7 +86,7 @@ def get_messages(session, timeout=None):
     Returns:
         list: A list containing the messages for the session. Formatted for OpenAI API.
     """
-  url = 'https://api.scholarly.repl.co/load-messages'
+  url = 'https://api.scholarly.repl.co/get-messages'
   data = {"session": session}
   try:
     response = requests.post(url, json=data, timeout=timeout)
