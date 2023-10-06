@@ -31,41 +31,21 @@ def check_error(response):
     raise Exception(f'Failed request. Status: {response.status_code}')
 
 
-def get_key(key_name, timeout=None):
-  """
-    Fetches the API key with the provided key name.
-
-    Args:
-        key_name (str): The name of the API key to fetch.
-        timeout (float, optional): The request timeout in seconds.
-
-    Returns:
-        str: A string containing the API key.
-    """
-  try:
-    data = {"keyName": key_name}
-    response = requests.post('https://api.scholarly.repl.co/get-key', json=data, timeout=timeout)
-    check_error(response)
-    return response.json()
-  except RequestException as error:
-    if error.__class__.__name__ == 'timeout':
-      raise TimeoutError(f'getKey Error: {error}')
-    raise error
-
-
-def get_session(timeout=None):
+def get_session(profile="default", timeout=None):
   """
     Fetches a new session ID.
 
     Args:
+        profile (str, optional): The profile for Coach.
         timeout (float, optional): The request timeout in seconds.
 
     Returns:
         dict: The string containing the session ID.
     """
   url = 'https://api.scholarly.repl.co/get-session'
+  data = {"profile":profile}
   try:
-    response = requests.get(url, timeout=timeout)
+    response = requests.post(url, json=data, timeout=timeout)
     check_error(response)
     data = response.json()
     return data
