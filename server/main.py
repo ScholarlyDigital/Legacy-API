@@ -9,10 +9,8 @@ import json
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 openai.key = os.environ.get('OPENAI_API_KEY')
-systemMessage = os.environ.get('SYSTEM_MESSAGE')
 
 tokensInUse = []
-
 
 class SessionToken:
 
@@ -44,7 +42,7 @@ class SessionToken:
   def check_token(self, token):
     return token in self.get_all()
 
-  def generate_token(self):
+  def generate_token(self, prompt):
     global systemMessage
     self.tokens = self.load_tokens()
     while True:
@@ -55,7 +53,7 @@ class SessionToken:
         os.makedirs(session_dir)
         jsonDir = "sessions/" + token + "/context.json"
         with open(jsonDir, "w") as j:
-          json.dump([{"role": "system", "content": systemMessage}], j)
+          json.dump([{"role": "system", "content": prompt}], j)
         txtDir = "sessions/" + token + "/transcript.txt"
         with open(txtDir, 'w') as f:
           f.write('')
@@ -64,32 +62,35 @@ class SessionToken:
 
 session_tokens = SessionToken()
 
-
-@app.route('/get-key', methods=['POST'])
-def getKey():
-  keyName = request.json["keyName"]
-  if keyName == "openai":
-    response = jsonify({'key': os.environ.get('OPENAI_API_KEY')})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
-  else:
-    return "Invalid argument provided.", 400
-
-
 @app.route('/get-messages', methods=['POST'])
 def get_messages():
   sessionToken = request.json["session"]
   if not session_tokens.check_token(sessionToken):
     return 'Invalid token.', 400
 
+  if sessionToken in tokensInUse:
+    return 'Token is in use.', 400
+
   jsonDir = "sessions/" + sessionToken + "/context.json"
   with open(jsonDir, "r") as j:
     return jsonify(json.load(j)[1:])
 
 
-@app.route('/get-session', methods=['GET'])
+@app.route('/get-session', methods=['POST'])
 def get_session():
-  return jsonify(session_tokens.generate_token())
+  profile = request.json["profile"]
+  if not profile or type(profile) != str:
+    return 'Invalid request.', 400
+
+  with open('profiles.json', 'r') as f:
+    profiles = json.load(f)
+  
+  try:
+    context = profiles[profile]
+  except:
+    return 'Invalid profile.', 400
+  
+  return jsonify(session_tokens.generate_token(context))
 
 
 @app.route('/download-js', methods=['GET'])
@@ -114,6 +115,7 @@ def index():
 
 @app.route('/coach', methods=['POST'])
 def coach():
+  print(tokensInUse)
   sessionToken = request.json["session"]
   if not session_tokens.check_token(sessionToken):
     return 'Invalid token.', 400
