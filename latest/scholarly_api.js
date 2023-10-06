@@ -32,15 +32,17 @@ export class InvalidArgumentError extends Error {
   }
   
   /**
-   * Fetches the API key with the provided key name.
-   * @param {string} keyName - The name of the API key to fetch.
+   * Fetches a new session ID.
+   * @param {string} profile - The profile for Coach.
    * @param {number} timeout - The request timeout in milliseconds.
-   * @returns {Promise} A promise that resolves to the JSON response containing the API key.
+   * @returns {Promise} A promise that resolves to the JSON response containing the session ID.
    */
-  export async function getKey(keyName, timeout) {
+  export async function getSession(profile, timeout) {
+    const url = 'https://api.scholarly.repl.co/get-session';
+    if (profile === undefined) profile = "default";
+    const data = '{"profile":"' + profile + '"}';
     try {
-      const data = '{"keyName":"' + keyName + '"}';
-      const response = await fetch('https://api.scholarly.repl.co/get-key', {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -54,29 +56,9 @@ export class InvalidArgumentError extends Error {
       return await response.json();
     } catch (error) {
       if (error.name === 'AbortError') {
-        throw new TimeoutError(`getKey Error: ${error.message}`);
-      }
-      throw error;
-    }
-  }
-  
-  /**
-   * Fetches a new session ID.
-   * @param {number} timeout - The request timeout in milliseconds.
-   * @returns {Promise} A promise that resolves to the JSON response containing the session ID.
-   */
-  export async function getSession(timeout) {
-    const url = 'https://api.scholarly.repl.co/get-session';
-    try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(timeout)});
-      checkError(response);
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      if (error.name === 'AbortError') {
         throw new TimeoutError(`getSession Error: ${error.message}`);
       }
-      else { throw error; }
+      throw error;
     }
   }
   
