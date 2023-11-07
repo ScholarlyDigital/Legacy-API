@@ -156,7 +156,7 @@ def coach():
       txtDir = "sessions/" + sessionToken + "/transcript.txt"
       with open(txtDir, 'a') as f:
         f.write("Coach: ")
-      for chunk in openai.ChatCompletion.create(model="gpt-4", messages=messageData, stream=True):
+      for chunk in openai.ChatCompletion.create(model="gpt-4-1106-preview", messages=messageData, stream=True):
         content = chunk["choices"][0].get("delta", {}).get("content")
         if content is not None:
           final += content
@@ -189,7 +189,7 @@ def coach():
     return response
   else:
     try:
-      content = openai.ChatCompletion.create(model="gpt-4",messages=messageData)
+      content = openai.ChatCompletion.create(model="gpt-4-1106-preview",messages=messageData)
       final = content["choices"][0]["message"]["content"]
       messageData.append({"role": "assistant", "content": final})
 
