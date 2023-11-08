@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, send_from_directory, Response, stream_with_context, request
+from flask import Flask, jsonify, render_template, send_from_directory, Response, stream_with_context, request, url_for
 from flask_cors import CORS
 import os
 import openai
@@ -7,10 +7,13 @@ import uuid
 import json
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 20 * 1000 * 1000
+app.config['UPLOAD_FOLDER'] = '/sessions/'
 CORS(app, supports_credentials=True)
 openai.key = os.environ.get('OPENAI_API_KEY')
 
 tokensInUse = []
+max_tokens = 4096
 
 class SessionToken:
 
@@ -42,7 +45,7 @@ class SessionToken:
   def check_token(self, token):
     return token in self.get_all()
 
-  def generate_token(self, prompt):
+  def generate_token(self, prompt, image, model):
     global systemMessage
     self.tokens = self.load_tokens()
     while True:
@@ -53,7 +56,7 @@ class SessionToken:
         os.makedirs(session_dir)
         jsonDir = "sessions/" + token + "/context.json"
         with open(jsonDir, "w") as j:
-          json.dump([{"role": "system", "content": prompt}], j)
+          json.dump([{"image":image,"count":0,"model":model},[{"role": "system", "content": prompt}]], j)
         txtDir = "sessions/" + token + "/transcript.txt"
         with open(txtDir, 'w') as f:
           f.write('')
@@ -73,7 +76,7 @@ def get_messages():
 
   jsonDir = "sessions/" + sessionToken + "/context.json"
   with open(jsonDir, "r") as j:
-    return jsonify(json.load(j)[1:])
+    return jsonify(json.load(j)[1][1:])
 
 
 @app.route('/get-session', methods=['POST'])
@@ -84,13 +87,22 @@ def get_session():
 
   with open('profiles.json', 'r') as f:
     profiles = json.load(f)
-  
+
+  image = False
+
+  if profile == "vision":
+    image = True
+    model = "gpt-4-vision-preview"
+  else:
+    image = False
+    model = "gpt-4-1106-preview"
+
   try:
     context = profiles[profile]
   except:
     return 'Invalid profile.', 400
-  
-  return jsonify(session_tokens.generate_token(context))
+
+  return jsonify(session_tokens.generate_token(context, image, model))
 
 
 @app.route('/download-js', methods=['GET'])
@@ -112,43 +124,81 @@ def cdn_js():
 def index():
   return render_template('docs.html')
 
+@app.route('/image/<session>/<path>')
+def view_image(session,path):
+  return send_from_directory('sessions',f'{session}/{path}')
+
 
 @app.route('/coach', methods=['POST'])
 def coach():
-  print(tokensInUse)
-  sessionToken = request.json["session"]
+  json_data = json.loads(request.files['json'].read().decode('utf-8'))
+  print(request.files)
+  sessionToken = json_data["session"]
   if not session_tokens.check_token(sessionToken):
     return 'Invalid token.', 400
 
-  prompt = request.json["prompt"]
+  prompt = json_data["prompt"]
   if prompt == None or type(prompt) != str:
     return 'Invalid prompt.', 400
 
-  stream = request.json["stream"]
+  stream = json_data["stream"]
   if stream == None or type(stream) != bool:
     return 'Invalid stream argument.', 400
 
   if sessionToken in tokensInUse:
     return 'Session in use.', 403
 
+  image_enabled = False
+
+  if 'image' in request.files:
+    if not session_tokens.load_data(sessionToken)[0]['image']:
+      return 'Images not allowed for this session.', 403
+    else:
+      if request.files['image'].content_type != 'image/jpeg' and request.files['image'].content_type != 'image/png' and request.files['image'].content_type != 'image/jpg':
+        return 'Invalid image format.', 400
+      image_type = request.files['image'].content_type[6:]
+      image_enabled = True
+
   tokensInUse.append(sessionToken)
 
-  messageData = session_tokens.load_data(sessionToken)
+  sessionData = session_tokens.load_data(sessionToken)
+  if image_enabled:
+    image_count = sessionData[0]['count']
+    image_count += 1
+    sessionData[0]['count'] = image_count
+    request.files['image'].save(f'sessions/{sessionToken}/{image_count}.{image_type}')
+    base_url = url_for('index', _external=True)
+    image_url = f'{base_url}image/{sessionToken}/{image_count}.{image_type}'
+  messageData = sessionData[1]
+  model = sessionData[0]['model'] 
 
-  if len(messageData) > 11:
-    newMessageData = messageData[-10:]
-    newMessageData.insert(0, messageData[0])
-    messageData = newMessageData
 
-  messageData.append({"role": "user", "content": prompt})
+  if not image_enabled:
+    if len(messageData) > 11:
+      newMessageData = messageData[-10:]
+      newMessageData.insert(0, messageData[0])
+      messageData = newMessageData
+  else:
+    if len(messageData) > 6:
+      newMessageData = messageData[-5:]
+      newMessageData.insert(0, messageData[5])
+      messageData = newMessageData
+
+  if not image_enabled:
+    messageData.append({"role": "user", "content":[{"type":"text","text":prompt}]})
+  else:
+    messageData.append({"role": "user","content":[{"type":"image_url","image_url":{"url":image_url,"detail":"low"}},{"type":"text","text":prompt}]})
 
   jsonDir = "sessions/" + sessionToken + "/context.json"
   with open(jsonDir, "w") as j:
-    json.dump(messageData, j)
+    json.dump([sessionData[0],messageData], j)
 
   txtDir = "sessions/" + sessionToken + "/transcript.txt"
   with open(txtDir, 'a') as f:
-    f.write("User: " + prompt + "\n\n")
+    if image_enabled:
+      f.write("User: (Image #"+ str(image_count) + " attached) " + prompt + "\n\n")
+    else:
+      f.write("User: " + prompt + "\n\n")
 
   def generate():
     final = ""
@@ -156,7 +206,7 @@ def coach():
       txtDir = "sessions/" + sessionToken + "/transcript.txt"
       with open(txtDir, 'a') as f:
         f.write("Coach: ")
-      for chunk in openai.ChatCompletion.create(model="gpt-4-1106-preview", messages=messageData, stream=True):
+      for chunk in openai.ChatCompletion.create(model=model, messages=messageData, stream=True,max_tokens=max_tokens):
         content = chunk["choices"][0].get("delta", {}).get("content")
         if content is not None:
           final += content
@@ -176,7 +226,7 @@ def coach():
       messageData.append({"role": "assistant", "content": final})
 
       with open(jsonDir, "w") as j:
-        json.dump(messageData, j)
+        json.dump([sessionData[0],messageData], j)
 
       with open(txtDir, 'a') as f:
         f.write("\n\n")
@@ -189,12 +239,12 @@ def coach():
     return response
   else:
     try:
-      content = openai.ChatCompletion.create(model="gpt-4-1106-preview",messages=messageData)
-      final = content["choices"][0]["message"]["content"]
+      content = openai.ChatCompletion.create(model=model,messages=messageData,max_tokens=max_tokens)
+      final = content.choices[0].message.content
       messageData.append({"role": "assistant", "content": final})
 
       with open(jsonDir, "w") as j:
-        json.dump(messageData, j)
+        json.dump([sessionData[0],messageData], j)
 
       txtDir = "sessions/" + sessionToken + "/transcript.txt"
       with open(txtDir, 'a') as f:
@@ -208,7 +258,7 @@ def coach():
       messageData.append({"role": "assistant", "content": final})
 
       with open(jsonDir, "w") as j:
-        json.dump(messageData, j)
+        json.dump([sessionData[0],messageData], j)
 
       txtDir = "sessions/" + sessionToken + "/transcript.txt"
       with open(txtDir, 'a') as f:
