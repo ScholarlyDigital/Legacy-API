@@ -7,7 +7,7 @@ export class InvalidArgumentError extends Error {
       this.name = 'InvalidArgumentError';
     }
   }
-  
+
   /**
    * Represents a custom error class for timeouts.
    */
@@ -17,7 +17,7 @@ export class InvalidArgumentError extends Error {
       this.name = 'TimeoutError';
     }
   }
-  
+
   /**
    * Checks the response for possible errors and throws appropriate exceptions.
    * @param {Response} response - The response object to be checked for errors.
@@ -30,7 +30,7 @@ export class InvalidArgumentError extends Error {
       throw new Error(`Failed request. Status: ${response.status}`);
     }
   }
-  
+
   /**
    * Fetches a new session ID.
    * @param {string} profile - The profile for Coach.
@@ -51,7 +51,7 @@ export class InvalidArgumentError extends Error {
         body: data,
         signal: AbortSignal.timeout(timeout),
       });
-  
+
       checkError(response);
       return await response.json();
     } catch (error) {
@@ -61,7 +61,7 @@ export class InvalidArgumentError extends Error {
       throw error;
     }
   }
-  
+
   /**
    * Fetches the messages for the provided session ID.
    * @param {string} session - The session ID.
@@ -81,7 +81,7 @@ export class InvalidArgumentError extends Error {
         body: data,
         signal: AbortSignal.timeout(timeout),
       });
-  
+
       checkError(response);
       return await response.json();
     } catch (error) {
@@ -91,7 +91,7 @@ export class InvalidArgumentError extends Error {
       throw error;
     }
   }
-  
+
   /**
    * Fetches the coach stream for the given prompt and session ID, returning an async generator with content chunks.
    * @param {string} prompt - The prompt to send to the coach stream.
@@ -99,33 +99,41 @@ export class InvalidArgumentError extends Error {
    * @param {AbortSignal} signal - The optional AbortSignal for handling cancellations.
    * @returns {AsyncGenerator} An async generator that yields content chunks from the coach stream.
    */
-  async function* fetchCoachStream(prompt, session, signal) {
+  async function* fetchCoachStream(prompt, session, imageInput = null, signal) {
+    const formData = new FormData();
+    formData.append('json', new Blob([JSON.stringify({
+        prompt: prompt,
+        session: session,
+        stream: true,
+    })], { type: 'application/json' }));
+
+    if (imageInput instanceof File) {
+        formData.append('image', imageInput);
+    }
+
     const response = await fetch("https://api.scholarly.repl.co/coach", {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ prompt: prompt, session: session, stream: true }),
+      body: formData,
       signal: signal
     });
-  
+
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);
     }
-  
+
     const reader = response.body.getReader();
     const decoder = new TextDecoder('utf-8');
-  
+
     try {
       while (true) {
         const { value, done } = await reader.read();
         if (done) {
           break;
         }
-  
+
         const content = decoder.decode(value, { stream: true });
         yield content;
-  
+
         if (signal.aborted) {
           break;
         }
@@ -137,27 +145,35 @@ export class InvalidArgumentError extends Error {
       throw error;
     }
   }
-  
+
   /**
    * Fetches a response from Coach.
    * @param {string} prompt - The prompt to send to coach.
    * @param {string} session - The session ID.
+   * @param {File|null} imageInput - Optional file input to an image file for Coach to analyse. Defaults to null.
    * @param {number} timeout - The request timeout in milliseconds.
    * @returns {Promise} A promise that resolves to the coach response.
    */
-  export async function coachResponse(prompt, session, timeout) {
+  export async function coachResponse(prompt, session, imageInput = null, timeout) {
     const url = 'https://api.scholarly.repl.co/coach';
+    const formData = new FormData();
+    formData.append('json', new Blob([JSON.stringify({
+        prompt: prompt,
+        session: session,
+        stream: false,
+    })], { type: 'application/json' }));
+
+    if (imageInput instanceof File) {
+        formData.append('image', imageInput);
+    }
+
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt: prompt, session: session, stream: false }),
+        body: formData,
         signal: AbortSignal.timeout(timeout),
       });
-  
+
       checkError(response);
       return await response.json();
     } catch (error) {
@@ -167,26 +183,27 @@ export class InvalidArgumentError extends Error {
       throw error;
     }
   }
-  
+
   /**
    * Streams content from the coach API given a prompt and sessionID.
    * @param {string} prompt - The prompt to send to coach.
    * @param {string} session - The session ID. Defaults to a new session.
+   * @param {File|null} imageInput - Optional file input to an image file for Coach to analyse. Defaults to null.
    * @param {function} onContentReceived - Callback function for handling content received.
    * @param {function} onStreamFinished - Callback function for when the stream has finished.
    * @param {function} onError - Callback function for handling errors during streaming.
    * @param {AbortSignal} signal - The optional AbortSignal for handling cancellations.
    */
-  export async function coachStream(prompt, session=getSession(null), onContentReceived, onStreamFinished, onError, signal) {
+  export async function coachStream(prompt, session=getSession(null), imageInput = null, onContentReceived, onStreamFinished, onError, signal) {
     const abortController = new AbortController();
     const onStopped = (manual) => {
     if (onStreamFinished) {
         onStreamFinished(manual);
     }
     };
-      
+
     try {
-        for await (const content of fetchCoachStream(prompt, session, signal ? signal : abortController.signal)) {
+        for await (const content of fetchCoachStream(prompt, session, imageInput, signal ? signal : abortController.signal)) {
           onContentReceived(content);
           if (signal && signal.aborted) {
             abortController.abort();
