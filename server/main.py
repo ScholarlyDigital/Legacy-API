@@ -124,15 +124,20 @@ def cdn_js():
 def index():
   return render_template('docs.html')
 
-@app.route('/image/<session>/<path>')
-def view_image(session,path):
-  return send_from_directory('sessions',f'{session}/{path}')
+@app.route('/image/<session>/<id>')
+def view_image(session,id):
+  try:
+    return send_from_directory('sessions',f'{session}/{id}.png')
+  except:
+    try:
+      return send_from_directory('sessions',f'{session}/{id}.jpg')
+    except:
+      return send_from_directory('sessions',f'{session}/{id}.jpeg')
 
 
 @app.route('/coach', methods=['POST'])
 def coach():
   json_data = json.loads(request.files['json'].read().decode('utf-8'))
-  print(request.files)
   sessionToken = json_data["session"]
   if not session_tokens.check_token(sessionToken):
     return 'Invalid token.', 400
@@ -168,7 +173,7 @@ def coach():
     sessionData[0]['count'] = image_count
     request.files['image'].save(f'sessions/{sessionToken}/{image_count}.{image_type}')
     base_url = url_for('index', _external=True)
-    image_url = f'{base_url}image/{sessionToken}/{image_count}.{image_type}'
+    image_url = f'{base_url}image/{sessionToken}/{image_count}'
   messageData = sessionData[1]
   model = sessionData[0]['model'] 
 
