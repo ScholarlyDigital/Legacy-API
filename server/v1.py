@@ -82,7 +82,9 @@ def get_session():
   if not profile or type(profile) != str:
     return 'Invalid request.', 400
 
-  with open(f'uploads/{branch_name}/profiles.json', 'r') as f:
+  jsonDir = f'uploads/{branch_name}/profiles.json'
+  
+  with open(jsonDir, 'r') as f:
     profiles = json.load(f)
 
   image = False
