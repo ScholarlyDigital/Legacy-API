@@ -145,12 +145,27 @@ def coach():
 
   sessionData = session_tokens.load_data(sessionToken)
 
-  if not image_enabled:
+  def limit_message():
+    message = 'The conversation length has reached it\'s limit. Please start a new chat session.'
+    for letter in message:
+      yield letter
+  
+  if sessionData[0].image:
     if len(sessionData[1]) > 21:
-      return jsonify('The conversation length has reached it\'s limit. Please start a new chat session.')
+      if stream:
+        response = Response(stream_with_context(limit_message()), content_type='text/plain')
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+      else:
+        return jsonify('The conversation length has reached it\'s limit. Please start a new chat session.')  
   else:
     if len(sessionData[1]) > 11:
-      return jsonify('The conversation length has reached it\'s limit. Please start a new chat session.')
+      if stream:
+        response = Response(stream_with_context(limit_message()), content_type='text/plain')
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+      else:
+        return jsonify('The conversation length has reached it\'s limit. Please start a new chat session.')  
 
   tokensInUse.append(sessionToken)
   
