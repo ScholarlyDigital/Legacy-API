@@ -143,9 +143,17 @@ def coach():
       image_type = request.files['image'].content_type[6:]
       image_enabled = True
 
-  tokensInUse.append(sessionToken)
-
   sessionData = session_tokens.load_data(sessionToken)
+
+  if not image_enabled:
+    if len(sessionData[1]) > 21:
+      return jsonify('The conversation length has reached it\'s limit. Please start a new chat session.')
+  else:
+    if len(sessionData[1]) > 11:
+      return jsonify('The conversation length has reached it\'s limit. Please start a new chat session.')
+
+  tokensInUse.append(sessionToken)
+  
   if image_enabled:
     image_count = sessionData[0]['count']
     image_count += 1
@@ -155,18 +163,6 @@ def coach():
     image_url = f'{base_url}{branch_name}/image/{sessionToken}/{image_count}'
   messageData = sessionData[1]
   model = sessionData[0]['model'] 
-
-
-  if not image_enabled:
-    if len(messageData) > 11:
-      newMessageData = messageData[-10:]
-      newMessageData.insert(0, messageData[0])
-      messageData = newMessageData
-  else:
-    if len(messageData) > 6:
-      newMessageData = messageData[-5:]
-      newMessageData.insert(0, messageData[5])
-      messageData = newMessageData
 
   if not image_enabled:
     messageData.append({"role": "user", "content":[{"type":"text","text":prompt}]})
