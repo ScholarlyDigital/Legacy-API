@@ -1,11 +1,5 @@
-from flask import Flask, jsonify, render_template, send_from_directory, Response, stream_with_context, request, url_for
+from flask import Flask, render_template, send_from_directory
 from flask_cors import CORS
-import os
-import openai
-import secrets
-import uuid
-import json
-import importlib
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1000 * 1000
