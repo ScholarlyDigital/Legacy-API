@@ -1,5 +1,0 @@
-{
-    "appService.showBuildDuringDeployPrompt": false,
-    "appService.defaultWebAppToDeploy": "/subscriptions/874650a4-f4bd-45a3-9832-64b21b978c64/resourceGroups/Legacy/providers/Microsoft.Web/sites/scholarlylegacy",
-    "appService.deploySubpath": "."
-}

@@ -5,6 +5,7 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1000 * 1000
 app.config['UPLOAD_FOLDER'] = '/uploads/'
 CORS(app, supports_credentials=True)
+print(app.ur)
 
 branches = ['v1']
 
@@ -32,4 +33,4 @@ def index():
   return render_template('docs.html')
 
 if __name__ == "__main__":
-  app.run(threaded=True)
+  app.run(host='0.0.0.0', threaded=True)
