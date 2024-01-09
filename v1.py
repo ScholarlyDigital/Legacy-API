@@ -5,7 +5,7 @@ import secrets
 import uuid
 import json
 
-openai.api_key = os.environ.get('OPENAI_API_KEY')
+client = openai.OpenAI()
 branch_name = 'v1'
 branch = Blueprint(branch_name, __name__)
 
@@ -150,7 +150,7 @@ def coach():
     for letter in message:
       yield letter
   
-  if sessionData[0].image:
+  if image_enabled:
     if len(sessionData[1]) > 21:
       if stream:
         response = Response(stream_with_context(limit_message()), content_type='text/plain')
@@ -174,7 +174,7 @@ def coach():
     image_count += 1
     sessionData[0]['count'] = image_count
     request.files['image'].save(f'uploads/{branch_name}/sessions/{sessionToken}/{image_count}.{image_type}')
-    base_url = url_for('index', _external=True)
+    base_url = url_for('index', _external=True).replace('http','https')
     image_url = f'{base_url}{branch_name}/image/{sessionToken}/{image_count}'
   messageData = sessionData[1]
   model = sessionData[0]['model'] 
@@ -201,8 +201,8 @@ def coach():
       txtDir = f"uploads/{branch_name}/sessions/" + sessionToken + "/transcript.txt"
       with open(txtDir, 'a') as f:
         f.write("Coach: ")
-      for chunk in openai.ChatCompletion.create(model=model, messages=messageData, stream=True,max_tokens=max_tokens):
-        content = chunk["choices"][0].get("delta", {}).get("content")
+      for chunk in client.chat.completions.create(model=model, messages=messageData, stream=True,max_tokens=max_tokens):
+        content = chunk.choices[0].delta.content
         if content is not None:
           final += content
           with open(txtDir, 'a') as f:
@@ -213,6 +213,7 @@ def coach():
       with open(txtDir, 'a') as f:
         f.write("[STOPPED BY USER]")
     except Exception as e:
+      print(e)
       final += "[ERROR OCCURED]"
       with open(txtDir, 'a') as f:
         f.write("[ERROR OCCURED]")
@@ -234,7 +235,7 @@ def coach():
     return response
   else:
     try:
-      content = openai.ChatCompletion.create(model=model,messages=messageData,max_tokens=max_tokens)
+      content = client.chat.completions.create(model=model,messages=messageData,max_tokens=max_tokens)
       final = content.choices[0].message.content
       messageData.append({"role": "assistant", "content": final})
 

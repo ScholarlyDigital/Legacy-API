@@ -31,5 +31,5 @@ def cdn_js():
 def index():
   return render_template('docs.html')
 
-
-app.run(host='0.0.0.0', threaded=True)
+if __name__ == "__main__":
+  app.run(threaded=True)
