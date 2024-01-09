@@ -5,7 +5,6 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1000 * 1000
 app.config['UPLOAD_FOLDER'] = '/uploads/'
 CORS(app, supports_credentials=True)
-print(app.ur)
 
 branches = ['v1']
 
