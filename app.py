@@ -15,6 +15,10 @@ for item in branches:
 
 @app.errorhandler(404)
 def page_not_found(e):
+  full_request_path = request.full_path
+
+  if full_request_path.startswith('/favicon.ico'):
+    return "Favicon not found", 404
   
   ip = request.headers.get('X-Forwarded-For', request.remote_addr)
   headers = dict(request.headers)
@@ -22,7 +26,6 @@ def page_not_found(e):
   query_params = request.args.to_dict()
   json_payload = request.get_json(silent=True)
   request_method = request.method
-  full_request_path = request.full_path
 
   client_data = {
     "IP": ip,
