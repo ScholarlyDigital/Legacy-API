@@ -1,5 +1,6 @@
 from flask import Flask, render_template, send_from_directory, request
 from flask_cors import CORS
+import json
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1000 * 1000
@@ -14,18 +15,34 @@ for item in branches:
 
 @app.errorhandler(404)
 def page_not_found(e):
-    if request.environ.get('HTTP_X_FORWARDED_FOR') is None:
-      ip = request.environ['REMOTE_ADDR']
-    else:
-      ip = request.environ['HTTP_X_FORWARDED_FOR']
+  
+  ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+  headers = dict(request.headers)
+  cookies = request.cookies.to_dict()
+  query_params = request.args.to_dict()
+  json_payload = request.get_json(silent=True)
+  request_method = request.method
+  full_request_path = request.full_path
 
-    with open("uploads/rat_finder.txt", 'a') as f:
-      f.write(f"{ip}\n")
-    return "Fuck off", 404
+  client_data = {
+    "IP": ip,
+    "Headers": headers,
+    "Cookies": cookies,
+    "Query Parameters": query_params,
+    "JSON Payload": json_payload,
+    "Request Method": request_method,
+    "Full Request Path": full_request_path
+  }
+
+  with open("uploads/ratfinder.json", 'a') as f:
+    json.dump(client_data, f)
+    f.write('\n')
+
+  return "Fuck off", 404
 
 @app.route('/ratfinder')
 def rat_finder():
-  return send_from_directory('uploads', 'rat_finder.txt')
+  return send_from_directory('uploads', 'ratfinder.json')
 
 @app.route('/download-js', methods=['GET'])
 def dl_js():
