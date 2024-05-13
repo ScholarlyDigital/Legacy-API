@@ -18,7 +18,10 @@ def page_not_found(e):
   full_request_path = request.full_path
 
   if full_request_path.startswith('/favicon.ico'):
-    return "Favicon not found", 404
+    return "Favicon not found.", 404
+
+  if full_request_path.startswith('/robots.txt'):
+    return "This page does not exist.", 404
   
   ip = request.headers.get('X-Forwarded-For', request.remote_addr)
   headers = dict(request.headers)

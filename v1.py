@@ -88,7 +88,7 @@ def get_session():
     profiles = json.load(f)
 
   image = True
-  model = "gpt-4-turbo"
+  model = "gpt-4o"
 
   try:
     context = profiles[profile]
@@ -145,7 +145,7 @@ def coach():
       yield letter
   
   if image_enabled:
-    if len(sessionData[1]) > 16:
+    if len(sessionData[1]) > 31:
       if stream:
         response = Response(stream_with_context(limit_message()), content_type='text/plain')
         response.headers.add('Access-Control-Allow-Origin', '*')
@@ -153,7 +153,7 @@ def coach():
       else:
         return jsonify('The conversation length has reached it\'s limit. Please start a new chat session.')  
   else:
-    if len(sessionData[1]) > 21:
+    if len(sessionData[1]) > 41:
       if stream:
         response = Response(stream_with_context(limit_message()), content_type='text/plain')
         response.headers.add('Access-Control-Allow-Origin', '*')
